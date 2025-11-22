@@ -1,0 +1,101 @@
+# ===================================================================
+# Root .gitignore for the Git Time Machine Monorepo Project
+# This file combines rules for both the backend and frontend projects.
+# ===================================================================
+
+
+### GLOBAL / COMMON RULES (Applies to all subdirectories) ###
+
+# Dependencies
+# Ignore all node_modules directories found anywhere in the project.
+/node_modules/
+/git-time-machine-backend/node_modules/
+/git-time-machine-frontend/node_modules/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# OS generated files
+.DS_Store
+*.pem
+
+# IDEs and Editors
+.idea/
+.project/
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# VSCode specific
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# Environment variables
+# Ignore all .env files. You should commit a .env.example file instead.
+.env
+.env*
+!.env.example
+
+# Temporary files and directories
+.temp/
+.tmp/
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Diagnostic reports (https://nodejs.org/api/report.html)
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+
+### BACKEND SPECIFIC (git-time-machine-backend) ###
+
+# Compiled output
+/git-time-machine-backend/dist/
+/git-time-machine-backend/build/
+
+# Test outputs
+/git-time-machine-backend/coverage/
+/git-time-machine-backend/.nyc_output/
+
+
+### FRONTEND SPECIFIC (git-time-machine-frontend) ###
+
+# Yarn PnP
+/git-time-machine-frontend/.pnp/
+/git-time-machine-frontend/.pnp.*
+/git-time-machine-frontend/.yarn/*
+!/git-time-machine-frontend/.yarn/patches
+!/git-time-machine-frontend/.yarn/plugins
+!/git-time-machine-frontend/.yarn/releases
+!/git-time-machine-frontend/.yarn/versions
+
+# Next.js build output
+/git-time-machine-frontend/.next/
+/git-time-machine-frontend/out/
+
+# Production build folder
+/git-time-machine-frontend/build/
+
+# Test outputs
+/git-time-machine-frontend/coverage/
+
+# Vercel deployment files
+/git-time-machine-frontend/.vercel/
+
+# TypeScript build info
+/git-time-machine-frontend/*.tsbuildinfo
+/git-time-machine-frontend/next-env.d.ts
