@@ -13,7 +13,7 @@ export class GitController {
     }
     // The entire analysis runs here before the response is sent.
     // The user's request will hang until this is 100% complete.
-    return this.gitService.analyzeRepository("https://github.com/VladEtoMarmelad/Chaos-Ticker");
+    return this.gitService.analyzeRepository(repoUrl);
   }
   
  @Get("/file")
