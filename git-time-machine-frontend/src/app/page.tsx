@@ -4,13 +4,15 @@ import { useEffect, useRef, useState } from "react";
 import { FileTree } from "@/components/FileTree";
 import { RangeSlider } from "@/components/RangeSlider";
 import { buildFileTree } from "@/utils/buildFileTree";
-import { File } from "@/types/File";
+import { File } from "@sharedTypes/File";
+import { Commit } from "@sharedTypes/Commit"
 import axios from "axios";
 
 export default function Home() {
-  const [commits, setCommits] = useState<any>(null);
-  const [choosedFile, setChoosedFile] = useState<string | null>(null);
+  const [commits, setCommits] = useState<Commit[]|null>(null);
+  const [choosedFile, setChoosedFile] = useState<string|null>(null);
   const [file, setFile] = useState<File|null>(null);
+  const [selectedCommitIndex, setSelectedCommitIndex] = useState<number>(0);
   const repoUrl = useRef<HTMLInputElement>(null)
 
   const getAllCommits = async () => {
@@ -32,7 +34,7 @@ export default function Home() {
       const res = await axios.get("http://localhost:3030/git/file", {
         params: {
           repoUrl: repoUrl.current?.value,
-          hash: commits[0].hash,
+          hash: commits[selectedCommitIndex].hash,
           path: target
         }
       });
@@ -47,15 +49,15 @@ export default function Home() {
   // Fetch file content whenever the chosen file or the last commit changes
   useEffect(() => {
     if (choosedFile) getFileContent();
-  }, [choosedFile, commits]);
+  }, [choosedFile, commits, selectedCommitIndex]);
 
   return (
     <div className="flex min-h-screen font-sans bg-[#0b1117] text-[#c9d1d9]">
       <div className="flex w-full">
         <div className="flex-shrink-0">
-          {(commits && commits[0] && commits[0].files) && 
+          {(commits && commits[selectedCommitIndex] && commits[selectedCommitIndex].files) && 
             <FileTree
-              fileTreeItems={buildFileTree(commits[0].files)}
+              fileTreeItems={buildFileTree(commits[selectedCommitIndex].files)}
               choosedFile={choosedFile}
               onSelect={(path) => { setChoosedFile(path); getFileContent(path) }}
             />
@@ -86,7 +88,13 @@ export default function Home() {
             </div>
           </section>
 
-          {commits && <RangeSlider commits={commits}/>}
+          {commits && 
+            <RangeSlider 
+              commits={commits}
+              selectedCommitIndex={selectedCommitIndex}
+              setSelectedCommitIndex={setSelectedCommitIndex}
+            />
+          }
         </main>
       </div>
     </div>

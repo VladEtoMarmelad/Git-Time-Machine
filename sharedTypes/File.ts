@@ -1,5 +1,5 @@
 export interface File {
-  hash: string;
+  hash?: string;
   path: string;
-  content: string
+  content?: string;
 }

@@ -2,6 +2,8 @@ import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common
 import { v4 as uuidv4 } from 'uuid';
 import { exec } from 'child_process';
 import { promisify } from 'util';
+import { Commit } from '@sharedTypes/Commit'
+import { File } from '@sharedTypes/File';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 import * as os from 'os'; 
@@ -35,7 +37,7 @@ export class GitService {
       // 3. If the check above passed, we can safely get the log
       const logCommand = `git --git-dir="${tempDir}" log --pretty=format:"%H|%an|%ad|%s" --date=iso`;
       const { stdout: logOutput } = await execAsync(logCommand);
-      const commits: any = logOutput.split('\n').filter(Boolean).map(line => {
+      const commits: Commit[] = logOutput.split("\n").filter(Boolean).map(line => {
         const [hash, author, date, message] = line.split("|");
         return { hash, author, date, message, files: [] };
       });
@@ -57,7 +59,7 @@ export class GitService {
       const processedCommits = commits.slice(0, 50);
 
       this.logger.log("Sync analysis complete!");
-      return { commits: processedCommits };
+      return { commits: processedCommits.reverse() };
 
     } catch (error) {
       this.logger.error(`Failed to analyze repo: ${error.message}`);
@@ -88,19 +90,19 @@ export class GitService {
         maxBuffer: 1024 * 1024 * 10, // 10 MB
       });
 
-      return {
+      const file: File = {
         hash: commitHash,
         path: filePath,
         content: fileContent,
       };
+      return file;
 
     } catch (error) {
-      // This error happens if the file didn't exist at that commit
-      // or if the path is incorrect.
-      this.logger.error(`Could not get file content: ${error.message}`);
-      throw new InternalServerErrorException(
-        `Could not retrieve content for file "${filePath}" at commit "${commitHash}". It might not exist at that point in history.`,
-      );
+      return {
+        hash: commitHash,
+        path: filePath,
+        content: `Could not retrieve content for file "${filePath}" at commit "${commitHash}". It might not exist at that commit yet.`
+      }
     } finally {
       // Always clean up the temporary clone
       await fs.rm(tempDir, { recursive: true, force: true });

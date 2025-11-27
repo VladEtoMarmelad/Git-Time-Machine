@@ -6,8 +6,7 @@ export class GitController {
   constructor(private readonly gitService: GitService) {}
   
   @Get("/commits")
-  async startAnalysis(@Query("repoUrl") repoUrl: string) {
-    console.log(repoUrl)
+  async analyzeRepository(@Query("repoUrl") repoUrl: string) {
     if (!repoUrl || !repoUrl.startsWith("https://github.com/")) {
       throw new HttpException("Invalid GitHub repository URL provided.", HttpStatus.BAD_REQUEST);
     }
@@ -17,7 +16,7 @@ export class GitController {
   }
   
  @Get("/file")
-  async getFileContent(@Query("repoUrl") repoUrl: string, @Query("hash") commitHash: string, @Query("path") filePath: string) {
+  async getFileContentFromCommit(@Query("repoUrl") repoUrl: string, @Query("hash") commitHash: string, @Query("path") filePath: string) {
     if (!repoUrl || !commitHash || !filePath) {
       throw new HttpException("Missing required query parameters: repoUrl, hash, path", HttpStatus.BAD_REQUEST);
     }

@@ -21,13 +21,26 @@ export const FIleTreeItem = ({ fileTreeItem, level = 0, expanded, toggle, choose
             className={`text-left w-full truncate px-2 py-1 ${isSelected ? 'font-semibold' : 'text-[#c9d1d9]'}`}
             onClick={() => onSelect?.(fileTreeItem.path)}
           >
-            <span className="mr-2 text-sm">📄</span>
+            <span className="mr-2 text-sm"><i className="bi bi-file-earmark"/></span>
             <span className="align-middle">{fileTreeItem.name}</span>
           </button>
         ) : (
           <button onClick={() => toggle(fileTreeItem.path)} className="flex items-center w-full px-2 py-1 text-[#8b949e]">
             <span className="inline-block w-4">{expanded.has(fileTreeItem.path) ? "▾" : "▸"}</span>
-            <span className="font-medium">📁 {fileTreeItem.name}</span>
+            <span className="font-medium">
+              {expanded.has(fileTreeItem.path) ? 
+                <i 
+                  className="bi bi-folder2-open" 
+                  style={{fontSize: 20}}
+                /> 
+                : 
+                <i 
+                  className="bi bi-folder2" 
+                  style={{fontSize: 20}}
+                /> 
+              } 
+              {fileTreeItem.name}
+            </span>
           </button>
         )}
       </div>

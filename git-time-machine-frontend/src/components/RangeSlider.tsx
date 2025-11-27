@@ -1,19 +1,26 @@
-import { useMemo, useState } from 'react';
+"use client"
 
-export const RangeSlider = ({commits}: {commits: any}) => {
-  const getDates = (commits: any): string[] => {
+import { useMemo } from 'react';
+import { Commit } from '@sharedTypes/Commit';
+
+interface RangeSliderProps {
+  commits: Commit[];
+  selectedCommitIndex: number;
+  setSelectedCommitIndex: (commitIndex: number) => void
+}
+
+export const RangeSlider = ({commits, selectedCommitIndex, setSelectedCommitIndex}: RangeSliderProps) => {
+  const getDates = (commits: Commit[]): string[] => {
     const dates: string[] = []
 
-    commits.forEach((commit: any) => {
+    commits.forEach((commit: Commit) => {
       dates.push(commit.date)
     })
 
     return dates
   }
 
-  const [selectedIndex, setSelectedIndex] = useState<number>(0);
   const dates = useMemo(() => getDates(commits), [commits])
-
   const maxIndex = dates.length - 1;
 
   // Helper for formatting dates (from string to readable format)
@@ -34,7 +41,7 @@ export const RangeSlider = ({commits}: {commits: any}) => {
 
   // Calculating the fill percentage for a gradient
   const getBackgroundSize = () => {
-    const percentage = (selectedIndex / maxIndex) * 100;
+    const percentage = (selectedCommitIndex / maxIndex) * 100;
     return { backgroundSize: `${percentage}% 100%` };
   };
 
@@ -49,12 +56,12 @@ export const RangeSlider = ({commits}: {commits: any}) => {
               History Checkpoint
             </label>
             <span className="text-xs text-[#8b949e]">
-              {selectedIndex + 1} / {dates.length}
+              {selectedCommitIndex + 1} / {dates.length}
             </span>
           </div>
           {/* Displays the full date of the currently selected index */}
           <div className="text-xl font-semibold text-white">
-            {formatDate(dates[selectedIndex], true)}
+            {formatDate(dates[selectedCommitIndex], true)}
           </div>
         </div>
 
@@ -66,8 +73,8 @@ export const RangeSlider = ({commits}: {commits: any}) => {
              {dates.map((dateStr, index) => {
                 // Calculating the position of a point in percentage
                 const percentage = (index / maxIndex) * 100;
-                const isActive = selectedIndex >= index;
-                const isCurrent = selectedIndex === index;
+                const isActive = selectedCommitIndex >= index;
+                const isCurrent = selectedCommitIndex === index;
 
                 return (
                   <div
@@ -87,8 +94,8 @@ export const RangeSlider = ({commits}: {commits: any}) => {
             min={0}
             max={maxIndex}
             step={1}
-            value={selectedIndex}
-            onChange={(e) => setSelectedIndex(Number(e.target.value))}
+            value={selectedCommitIndex}
+            onChange={(e) => setSelectedCommitIndex(Number(e.target.value))}
             style={getBackgroundSize()}
             className="
               absolute w-full z-20 h-2 appearance-none rounded-lg bg-transparent cursor-pointer
@@ -127,7 +134,7 @@ export const RangeSlider = ({commits}: {commits: any}) => {
                 
                 const isFirst = index === 0;
                 const isLast = index === maxIndex;
-                const isSelected = index === selectedIndex;
+                const isSelected = index === selectedCommitIndex;
 
                 // Display logic: show the label only if it is selected or the last one
                 const shouldShow = isFirst || isLast || isSelected;
@@ -135,7 +142,7 @@ export const RangeSlider = ({commits}: {commits: any}) => {
                 return (
                   <div
                     key={dateStr}
-                    onClick={() => setSelectedIndex(index)}
+                    onClick={() => setSelectedCommitIndex(index)}
                     className={`
                       absolute text-xs transform -translate-x-1/2 cursor-pointer transition-colors duration-200
                       ${isSelected ? 'text-white font-bold top-[-5px]' : 'text-[#8b949e]'}
