@@ -1,0 +1,1 @@
+export type JobStatus = "idle"|"processing"|"completed"|"failed";

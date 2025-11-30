@@ -18,6 +18,8 @@ This project is a demonstration of using a NestJS backend to interact directly w
 #### **Backend (`git-time-machine-backend`)**
 
 -   **Framework:** [NestJS](https://nestjs.com/)
+-   **Job Queue:** [Bull](https://github.com/OptimalBits/bull) / [BullMQ](https://bullmq.io/)
+-   **Database/Cache:** [Redis](https://redis.io/)
 -   **Language:** TypeScript
 -   **Runtime:** Node.js
 
@@ -33,6 +35,7 @@ Before you begin, ensure you have the following installed on your system:
 
 -   **Node.js:** v18.x or later
 -   **Git:** Must be installed and accessible from your system's command line.
+-   **Docker:** Required to run the Redis instance.
 
 ## Installation
 
@@ -59,11 +62,19 @@ npm install
 
 ## Running the Application
 
-To run the application, you will need to start both the backend and the frontend development servers. It's best to use two separate terminal windows for this.
+To run the application, you will need to start Redis, the backend, and the frontend. It's best to use separate terminal windows for this.
 
-**1. Start the Backend Server**
+**1. Start Redis**
 
-In your first terminal, navigate to the backend directory and run the development server.
+The backend requires Redis. Run the following command to start a Redis container using Docker:
+
+```bash
+docker run --name git-time-machine-redis -p 6379:6379 -d redis
+```
+
+**2. Start the Backend Server**
+
+In your terminal, navigate to the backend directory and run the development server.
 
 ```bash
 # Navigate to the backend directory
@@ -75,9 +86,9 @@ npm run start
 
 The NestJS backend will start and listen for requests. By default, it runs on `http://localhost:3030`.
 
-**2. Start the Frontend Server**
+**3. Start the Frontend Server**
 
-In your second terminal, navigate to the frontend directory and run the development server.
+In another terminal, navigate to the frontend directory and run the development server.
 
 ```bash
 # Navigate to the frontend directory
@@ -89,7 +100,7 @@ npm dev
 
 The Next.js frontend will start. By default, it runs on `http://localhost:3000`.
 
-**3. Open The App!**
+**4. Open The App!**
 
 You can now access the Git Time Machine by opening your web browser and navigating to:
 
