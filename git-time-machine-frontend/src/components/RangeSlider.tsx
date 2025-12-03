@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import { Commit } from '@sharedTypes/Commit';
+import { formatDate } from '@/utils/formatDate';
 
 interface RangeSliderProps {
   commits: Commit[];
@@ -23,26 +24,24 @@ export const RangeSlider = ({commits, selectedCommitIndex, setSelectedCommitInde
   const dates = useMemo(() => getDates(commits), [commits])
   const maxIndex = dates.length - 1;
 
-  // Helper for formatting dates (from string to readable format)
-  const formatDate = (dateString: string, full = false) => {
-    const date = new Date(dateString);
-    if (full) {
-      // Full format for title
-      return new Intl.DateTimeFormat("en-EN", {
-        day: "numeric", month: "long", year: "numeric",
-        hour: "numeric", minute: "numeric", second: "numeric"
-      }).format(date);
-    }
-    // Short format for labels
-    return new Intl.DateTimeFormat("en-EN", {
-      day: "2-digit", month: "short"
-    }).format(date);
-  };
-
   // Calculating the fill percentage for a gradient
   const getBackgroundSize = () => {
-    const percentage = (selectedCommitIndex / maxIndex) * 100;
+    const percentage = maxIndex > 0 ? (selectedCommitIndex / maxIndex) * 100 : 0;
     return { backgroundSize: `${percentage}% 100%` };
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    // Allow empty input to let user clear it
+    if (value === "") {
+      return;
+    }
+
+    const num = parseInt(value, 10);
+    // Validation: check if it's a number and within the valid range (1 to length)
+    if (!isNaN(num) && num >= 1 && num <= dates.length) {
+      setSelectedCommitIndex(num - 1); // Convert from 1-based to 0-based index
+    }
   };
 
   return (
@@ -55,13 +54,47 @@ export const RangeSlider = ({commits, selectedCommitIndex, setSelectedCommitInde
             <label className="text-xs font-bold uppercase tracking-wider text-[#8b949e]">
               History Checkpoint
             </label>
-            <span className="text-xs text-[#8b949e]">
-              {selectedCommitIndex + 1} / {dates.length}
-            </span>
+            <div className="text-xs text-[#8b949e] flex items-center">
+              
+              {/* --- Custom Number Input with Arrows --- */}
+              <div className="flex items-center bg-[#010409] border border-[#30363d] rounded-md">
+                <input 
+                  type="number"
+                  value={selectedCommitIndex + 1}
+                  onChange={handleInputChange}
+                  // Hide default browser arrows
+                  className={`
+                    w-12 text-center bg-transparent border-none outline-none
+                    [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none
+                  `}
+                />
+                {/* Custom arrows using SVG */}
+                <div className="flex flex-col text-gray-400">
+                  <button 
+                    onClick={() => setSelectedCommitIndex(Math.min(selectedCommitIndex + 1, maxIndex))} 
+                    className="px-1 hover:bg-[#1f6feb] hover:text-white rounded-tr-sm"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                    </svg>
+                  </button>
+                  <button 
+                    onClick={() => setSelectedCommitIndex(Math.max(selectedCommitIndex - 1, 0))} 
+                    className="px-1 hover:bg-[#1f6feb] hover:text-white rounded-br-sm"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              
+              <span className="ml-2">/ {dates.length}</span>
+            </div>
           </div>
           {/* Displays the full date of the currently selected index */}
           <div className="text-xl font-semibold text-white">
-            {formatDate(dates[selectedCommitIndex], true)}
+            {dates.length > 0 ? formatDate(dates[selectedCommitIndex], true) : "No commits found"}
           </div>
         </div>
 
@@ -129,31 +162,31 @@ export const RangeSlider = ({commits, selectedCommitIndex, setSelectedCommitInde
 
           {/* Date Labels (Bottom Layer) */}
           <div className="absolute top-8 w-full h-6 select-none">
-             {dates.map((dateStr, index) => {
-                const percentage = (index / maxIndex) * 100;
+            {dates.map((dateStr, index) => {
+              const percentage = (index / maxIndex) * 100;
                 
-                const isFirst = index === 0;
-                const isLast = index === maxIndex;
-                const isSelected = index === selectedCommitIndex;
+              const isFirst = index === 0;
+              const isLast = index === maxIndex;
+              const isSelected = index === selectedCommitIndex;
 
-                // Display logic: show the label only if it is selected or the last one
-                const shouldShow = isFirst || isLast || isSelected;
+              // Display logic: show the label only if it is selected or the last one
+              const shouldShow = isFirst || isLast || isSelected;
 
-                return (
-                  <div
-                    key={dateStr}
-                    onClick={() => setSelectedCommitIndex(index)}
-                    className={`
-                      absolute text-xs transform -translate-x-1/2 cursor-pointer transition-colors duration-200
-                      ${isSelected ? 'text-white font-bold top-[-5px]' : 'text-[#8b949e]'}
-                      ${!shouldShow ? 'opacity-0 pointer-events-none' : 'opacity-100'}
-                    `}
-                    style={{ left: `${percentage}%` }}
-                  >
-                    {formatDate(dateStr)}
-                  </div>
-                );
-             })}
+              return (
+                <div
+                  key={dateStr}
+                  onClick={() => setSelectedCommitIndex(index)}
+                  className={`
+                    absolute text-xs transform -translate-x-1/2 cursor-pointer transition-colors duration-200
+                    ${isSelected ? 'text-white font-bold top-[-5px]' : 'text-[#8b949e]'}
+                    ${!shouldShow ? 'opacity-0 pointer-events-none' : 'opacity-100'}
+                  `}
+                  style={{ left: `${percentage}%` }}
+                >
+                  {formatDate(dateStr)}
+                </div>
+              );
+            })}
           </div>
 
         </div>

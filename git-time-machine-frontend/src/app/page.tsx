@@ -36,7 +36,7 @@ export default function Home() {
   } = useJobPolling<File>({
     startJobFn: (params) => gitApi.startFileJob(params.url, params.hash, params.path),
     pollJobFn: gitApi.pollFileJob
-  });
+  }); 
 
   // Effect: Upload file when commit is changed or new file is selected
   useEffect(() => {
@@ -59,16 +59,12 @@ export default function Home() {
             <FileTree
               fileTreeItems={buildFileTree(commits[selectedCommitIndex].files)}
               choosedFile={chosenFilePath}
-              onSelect={(path) => fetchFile({
-                url: repoUrl.current?.value,
-                hash: commits[selectedCommitIndex].hash,
-                path
-              })}
+              onSelect={(path) => setChosenFilePath(path)}
             />
           }
         </div>
 
-        <main className="flex-1 p-6">
+        <main className="flex-1 p-6 w-px">
           <RepoUrlInput 
             repoUrl={repoUrl}
             commitsStatus={commitsStatus}
