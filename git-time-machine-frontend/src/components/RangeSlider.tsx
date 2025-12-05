@@ -46,7 +46,7 @@ export const RangeSlider = ({commits, selectedCommitIndex, setSelectedCommitInde
 
   return (
     <div className="flex min-h-[200px] w-full items-center justify-center bg-[#0d1117] text-gray-300">
-      <div className="w-full max-w-2xl space-y-4">
+      <div className="w-full max-w-7xl space-y-4">
         
         {/* Top: Selected value */}
         <div className="flex flex-col space-y-1">

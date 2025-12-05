@@ -3,12 +3,13 @@ import { Job } from 'bull';
 import { Logger } from '@nestjs/common';
 import { exec } from 'child_process';
 import { promisify } from 'util';
-import { v4 as uuidv4 } from 'uuid';
 import { Commit } from '@sharedTypes/Commit';
 import { File } from '@sharedTypes/File';
+import { Mutex, MutexInterface } from 'async-mutex'; 
 import * as path from 'path';
 import * as os from 'os';
-import * as fs from 'fs/promises';
+import * as fs from 'fs-extra'; 
+import * as crypto from 'crypto';
 
 const execAsync = promisify(exec);
 
@@ -16,81 +17,108 @@ const execAsync = promisify(exec);
 export class GitProcessor {
   private readonly logger = new Logger(GitProcessor.name);
 
+  // Base folder for storing cached repositories
+  private readonly cacheDir = path.join(os.tmpdir(), "gittm-cache");
+
+  // Mutexes for each repository to avoid updating the same repo simultaneously
+  private readonly locks: Map<string, MutexInterface> = new Map();
+
+  // Ensure the cache folder exists
+  constructor() {fs.ensureDirSync(this.cacheDir)};
+  
+  // Gets the path to the repository folder and ensures it is up to date.
+  // Uses locking so threads do not interfere with each other.
+  private async ensureRepo(repoUrl: string): Promise<string> {
+    // Generate a unique folder name based on the URL (md5 hash)
+    const repoHash = crypto.createHash("md5").update(repoUrl).digest("hex");
+    const repoPath = path.join(this.cacheDir, repoHash);
+
+    if (!this.locks.has(repoHash)) {
+      this.locks.set(repoHash, new Mutex());
+    }
+
+    const release = await this.locks.get(repoHash)!.acquire();
+    
+    try {
+      if (await fs.pathExists(repoPath)) {
+        // Repository already exists, fetch to update
+        this.logger.log(`Updating cached repo: ${repoUrl}`);
+        // This command is more robust than fetching a specific branch like 'master'
+        await execAsync(`git --git-dir="${repoPath}" fetch origin --prune --force`); 
+        // Note: for bare repositories, fetch updates references
+      } else {
+        // Repository does not exist, clone it
+        this.logger.log(`Cloning new repo: ${repoUrl}`);
+        // --bare: does not create a working directory (only .git), saves space
+        // --filter=blob:none: DOES NOT download file contents immediately (huge traffic saving)
+        await execAsync(`git clone --bare --filter=blob:none "${repoUrl}" "${repoPath}"`);
+      }
+      return repoPath;
+    } finally {
+      release();
+    }
+  }
+
   @Process("getCommits")
   async getCommits(job: Job<{ repoUrl: string }>) { 
     const { repoUrl } = job.data;
     
-    this.logger.log(`Starting background analysis for ${repoUrl} (Job ID: ${job.id})...`);
-    
-    const tempDir = path.join(os.tmpdir(), `gittm-sync-${uuidv4()}`);
-
     try {
-      await execAsync(`git clone --bare "${repoUrl}" "${tempDir}"`);
-      
+      const repoPath = await this.ensureRepo(repoUrl);
+
+      // Check for emptiness (optional, bare repo always has HEAD unless completely empty)
       try {
-        await execAsync(`git --git-dir="${tempDir}" rev-parse --verify HEAD`);
-      } catch (headError) {
-        this.logger.log(`Repository ${repoUrl} is empty. Finishing task.`);
-        return { commits: [] }; 
+        await execAsync(`git --git-dir="${repoPath}" rev-parse --verify HEAD`);
+      } catch (e) {
+        return { commits: [] };
       }
 
-      const logCommand = `git --git-dir="${tempDir}" log --pretty=format:"%H|%an|%ad|%s" --date=iso`;
+      const logCommand = `git --git-dir="${repoPath}" log --pretty=format:"%H|%an|%ad|%s" --date=iso`;
+      
       const { stdout: logOutput } = await execAsync(logCommand);
+      
       const commits: Commit[] = logOutput.split("\n").filter(Boolean).map(line => {
         const [hash, author, date, message] = line.split("|");
         return { hash, author, date, message, files: [] };
       });
-      const processedCommits = commits.slice(0, 50);
 
-      for (const commit of processedCommits) {
-        const lsTreeCommand = `git --git-dir="${tempDir}" ls-tree -r --name-only ${commit.hash}`;
-        const { stdout: lsTreeOutput } = await execAsync(lsTreeCommand);
+      // Collecting files for commits
+      for (const commit of commits) {
+        // --name-only significantly reduces output size compared to full ls-tree
+        const lsTreeCommand = `git --git-dir="${repoPath}" ls-tree -r --name-only ${commit.hash}`;
         
-        const files = lsTreeOutput.split("\n").filter(Boolean).map(line => {
-          return { path: line };
-        });
-        commit.files = files;
+        const { stdout: lsTreeOutput } = await execAsync(lsTreeCommand, { maxBuffer: 1024 * 1024 * 50 });
+        
+        commit.files = lsTreeOutput.split("\n").filter(Boolean).map(path => ({ path }));
       }
 
-      this.logger.log(`Analysis for Job ID: ${job.id} completed!`);
-      return { commits: processedCommits.reverse() };
+      return { commits: commits.reverse() }; // They are already in the correct order from git log
     } catch (error) {
       this.logger.error(`Task ${job.id} failed: ${error.message}`);
       throw error; 
-    } finally {
-      this.logger.log(`Cleaning up directory for Job ID: ${job.id}`);
-      await fs.rm(tempDir, { recursive: true, force: true });
     }
   }
 
   @Process("getFileContentFromCommit")
-  async getFileContentFromCommit(job: Job<{repoUrl: string, commitHash: string, filePath: string}>) {
+  async getFileContentFromCommit(job: Job<{repoUrl: string, commitHash: string, filePath: string}>): Promise<File> {
     const { repoUrl, commitHash, filePath } = job.data
 
-    this.logger.log(`Fetching content for ${filePath} at commit ${commitHash}`);
-    const tempDir = path.join(os.tmpdir(), `gittm-content-${uuidv4()}`);
-  
     try {
-      // We still need to clone the repo to access its objects.
-      // A bare clone is very efficient.
-      await execAsync(`git clone --bare "${repoUrl}" "${tempDir}"`);
+      // Use the same cache! It is instant if getCommits has already run
+      const repoPath = await this.ensureRepo(repoUrl);
   
-      // THE CORE COMMAND: git show <commit_hash>:<path_to_file>
-      // This command directly accesses the blob object for that file at that specific commit
-      // and prints its raw content to stdout.
-      const command = `git --git-dir="${tempDir}" show ${commitHash}:${filePath}`;
+      // git show will automatically download the blob from the server (due to --filter=blob:none) if it is not local
+      const command = `git --git-dir="${repoPath}" show ${commitHash}:${filePath}`;
         
       const { stdout: fileContent } = await execAsync(command, {
-        // Increase maxBuffer in case files are large (e.g., >1MB)
         maxBuffer: 1024 * 1024 * 10, // 10 MB
       });
   
-      const file: File = {
+      return {
         hash: commitHash,
         path: filePath,
         content: fileContent,
       };
-      return file;
   
     } catch (error) {
       return {
@@ -98,9 +126,6 @@ export class GitProcessor {
         path: filePath,
         content: `Could not retrieve content for file "${filePath}" at commit "${commitHash}". It might not exist at that commit yet.`
       }
-    } finally {
-      // Always clean up the temporary clone
-      await fs.rm(tempDir, { recursive: true, force: true });
     }
   }
 }
