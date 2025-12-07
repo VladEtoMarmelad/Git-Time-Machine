@@ -10,11 +10,12 @@ import { useJobPolling } from "@/hooks/useJobPolling";
 import { gitApi } from "@/utils/gitApi";
 import { RepoUrlInput } from "@/components/RepoUrlInput";
 import { FileViewer } from "@/components/FileViewer";
+import { CommitInfo } from "@/components/CommitInfo";
 
 export default function Home() {
   const [selectedCommitIndex, setSelectedCommitIndex] = useState<number>(0);
   const [chosenFilePath, setChosenFilePath] = useState<string | null>(null);
-  const repoUrl = useRef<HTMLInputElement>(null);
+  const [repoUrl, setRepoUrl] = useState<string>("");
 
   // Job for commits
   const { 
@@ -42,12 +43,14 @@ export default function Home() {
   useEffect(() => {
     if (chosenFilePath && commits && commits[selectedCommitIndex]) {
       fetchFile({
-        url: repoUrl.current?.value,
+        url: repoUrl,
         hash: commits[selectedCommitIndex].hash,
         path: chosenFilePath
       });
     }
   }, [chosenFilePath, selectedCommitIndex, commits]); 
+
+  //console.log("commits: ", commits)
 
   return (
     <div className="flex min-h-screen font-sans bg-[#0b1117] text-[#c9d1d9]">
@@ -66,11 +69,19 @@ export default function Home() {
 
         <main className="flex-1 p-6 w-px">
           <RepoUrlInput 
-            repoUrl={repoUrl}
             commitsStatus={commitsStatus}
+            repoUrl={repoUrl}
+            setRepoUrl={setRepoUrl}
             setChosenFilePath={setChosenFilePath}
             fetchCommits={fetchCommits}  
           />
+
+          {commits &&
+            <CommitInfo 
+              commit={commits[selectedCommitIndex]}
+              repoUrl={repoUrl}
+            />
+          }
 
           <FileViewer 
             fileStatus={fileStatus}

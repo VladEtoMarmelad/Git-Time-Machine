@@ -21,18 +21,29 @@ export const FileViewer = ({fileStatus, fileError, fileContent, chosenFilePath}:
     background: 'transparent',
     fontSize: '0.875rem', 
     lineHeight: '1.5',
-    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace'
+    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+
   };
 
   return (
     <section style={{ scrollbarColor: 'gray #010409', scrollbarWidth: 'thin' }}>
       <h2 className="text-lg font-semibold mb-2">File review</h2>
-      <div className="bg-[#010409] border border-[#30363d] rounded-md text-sm text-[#c9d1d9] h-[60vh]">
-        <pre className="whitespace-pre-wrap break-words h-[60vh] overflow-auto font-mono">
+      <section className="bg-[#010409] border border-[#30363d] rounded-md text-sm text-[#c9d1d9] h-[52.5vh] overflow-hidden">
+        {/* A block of code with outer padding of the container */}
+        <div 
+          className={`
+            ${(fileStatus !== "processing" && fileStatus !== "failed" && fileContent?.content) ? "" : "p-4"} 
+            whitespace-pre-wrap break-words h-full overflow-auto font-mono
+          `}
+          style={{ scrollbarColor: 'gray #010409', scrollbarWidth: 'thin' }}
+        >
           {fileStatus === "processing" && "Loading file content..."}
           {fileStatus === "failed" && <span className="text-red-500">{fileError}</span>}
           {fileStatus === "idle" && !chosenFilePath && "Select a file to view its content."}
-          {fileStatus !== "processing" && fileStatus !== "failed" && fileContent?.content && 
+        
+
+          {/* A block of code without outer padding of the container */}
+          {fileStatus !== "processing" && fileStatus !== "failed" && fileContent?.content &&
             <SyntaxHighlighter
               language={language}
               style={vscDarkPlus}
@@ -49,8 +60,8 @@ export const FileViewer = ({fileStatus, fileError, fileContent, chosenFilePath}:
               {fileContent.content}
             </SyntaxHighlighter>
           }
-        </pre>
-      </div>
+        </div>
+      </section>
     </section>
   )
 }
