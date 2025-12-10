@@ -111,7 +111,7 @@ export const RangeSlider = ({commits, selectedCommitIndex, setSelectedCommitInde
 
                 return (
                   <div
-                    key={dateStr}
+                    key={`${index} ${dateStr}`}
                     className={`absolute h-2 w-2 rounded-full transition-colors duration-200 -ml-1
                       ${isActive ? 'bg-[#1f6feb]' : 'bg-[#484f58]'}
                       ${isCurrent ? 'scale-150' : ''} 
@@ -174,7 +174,7 @@ export const RangeSlider = ({commits, selectedCommitIndex, setSelectedCommitInde
 
               return (
                 <div
-                  key={dateStr}
+                  key={`${index} ${dateStr}`}
                   onClick={() => setSelectedCommitIndex(index)}
                   className={`
                     absolute text-xs transform -translate-x-1/2 cursor-pointer transition-colors duration-200

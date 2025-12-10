@@ -5,15 +5,20 @@ interface RepoUrlInputProps {
   repoUrl: string;
   setRepoUrl: (newRepoUrl: string) => void;
   setChosenFilePath: (filePath: string|null) => void;
-  fetchCommits: (params: any) => Promise<void>
+  fetchCommits: (params: any) => Promise<void>;
+  fetchBranches: (params: any) => Promise<void>
 }
 
-export const RepoUrlInput = ({commitsStatus, repoUrl, setRepoUrl, setChosenFilePath, fetchCommits}: RepoUrlInputProps) => {
+export const RepoUrlInput = ({commitsStatus, repoUrl, setRepoUrl, setChosenFilePath, fetchCommits, fetchBranches}: RepoUrlInputProps) => {
 
   const handleStartAnalysis = () => {
     if (!repoUrl) return;
     setChosenFilePath(null);
-    fetchCommits(repoUrl);
+    fetchCommits({
+      url: repoUrl,
+      branch: ""
+    });
+    fetchBranches(repoUrl);
   };
 
   return (

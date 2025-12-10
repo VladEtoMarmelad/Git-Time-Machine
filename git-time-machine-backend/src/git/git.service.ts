@@ -4,15 +4,21 @@ import { Queue } from 'bull';
 
 @Injectable()
 export class GitService {
+
   constructor(@InjectQueue("git-analysis") private readonly analysisQueue: Queue) {}
 
-  async getCommits(repoUrl: string) {
-    const job = await this.analysisQueue.add("getCommits", {repoUrl});
+  async getCommits(repoUrl: string, branch: string|null) {
+    const job = await this.analysisQueue.add("getCommits", {repoUrl, branch});
     return { jobId: job.id };
   }
 
   async getFileContentFromCommit(repoUrl: string, commitHash: string, filePath: string) {
     const job = await this.analysisQueue.add("getFileContentFromCommit", {repoUrl, commitHash, filePath});
+    return { jobId: job.id };
+  }
+
+  async getBranches(repoUrl: string) {
+    const job = await this.analysisQueue.add("getBranches", {repoUrl});
     return { jobId: job.id };
   }
 

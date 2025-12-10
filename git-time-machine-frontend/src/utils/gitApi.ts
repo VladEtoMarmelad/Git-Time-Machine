@@ -3,15 +3,28 @@ import axios from "axios";
 const API_URL = "http://localhost:3030";
 
 export const gitApi = {
-  startCommitsJob: async (repoUrl: string) => {
-    const res = await axios.post(`${API_URL}/git/getCommits`, { repoUrl });
+  startCommitsJob: async (repoUrl: string, branch: string = "") => {
+    const res = await axios.post(`${API_URL}/git/getCommits`, { repoUrl, branch });
     return res.data.jobId;
   },
   pollCommitsJob: async (id: string) => {
     const res = await axios.get(`${API_URL}/git/getCommits/${id}`);
     return { 
       state: res.data.state, 
-      result: res.data.result?.commits, // Commits
+      result: res.data.result?.commits, // Commit[]
+      failedReason: res.data.failedReason 
+    };
+  },
+
+  startBranchesJob: async (repoUrl: string) => {
+    const res = await axios.post(`${API_URL}/git/branches`, { repoUrl });
+    return res.data.jobId;
+  },
+  pollBranchesJob: async (id: string) => {
+    const res = await axios.get(`${API_URL}/git/branches/${id}`);
+    return { 
+      state: res.data.state, 
+      result: res.data.result, // string[]
       failedReason: res.data.failedReason 
     };
   },

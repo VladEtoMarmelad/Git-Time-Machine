@@ -60,9 +60,9 @@ export class GitProcessor {
   }
 
   @Process("getCommits")
-  async getCommits(job: Job<{ repoUrl: string }>) { 
-    const { repoUrl } = job.data;
-    
+  async getCommits(job: Job<{ repoUrl: string, branch: string|null }>) { 
+    const { repoUrl, branch } = job.data;
+
     try {
       const repoPath = await this.ensureRepo(repoUrl);
 
@@ -73,7 +73,7 @@ export class GitProcessor {
         return { commits: [] };
       }
 
-      const logCommand = `git --git-dir="${repoPath}" log --pretty=format:"%H|%an|%ad|%s" --date=iso`;
+      const logCommand = `git --git-dir="${repoPath}" log ${branch ? branch : ""} --pretty=format:"%H|%an|%ad|%s" --date=iso`;
       
       const { stdout: logOutput } = await execAsync(logCommand);
       
@@ -127,5 +127,19 @@ export class GitProcessor {
         content: `Could not retrieve content for file "${filePath}" at commit "${commitHash}". It might not exist at that commit yet.`
       }
     }
+  }
+
+  @Process("getBranches")
+  async getBranches(job: Job<{repoUrl: string}>) {
+    const { repoUrl } = job.data
+
+    const getBranchesCommand = `git ls-remote --heads ${repoUrl}`;
+    const { stdout: branchesOutput } = await execAsync(getBranchesCommand);
+
+    return branchesOutput.split("\n").map(line => {
+      // Ищем совпадение после refs/heads/ и захватываем все до конца строки
+      const match = line.match(/refs\/heads\/(.+)/);
+      return match ? match[1] : null;
+    }).filter((branch): branch is string => branch !== null); // Убираем null (пустые строки)
   }
 }

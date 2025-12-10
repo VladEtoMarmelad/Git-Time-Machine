@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { FileTree } from "@/components/FileTree";
 import { RangeSlider } from "@/components/RangeSlider";
 import { buildFileTree } from "@/utils/buildFileTree";
@@ -24,8 +24,19 @@ export default function Home() {
     result: commits, 
     error: commitsError 
   } = useJobPolling<Commit[]>({
-    startJobFn: (url) => gitApi.startCommitsJob(url),
+    startJobFn: (params) => gitApi.startCommitsJob(params.url, params.branch),
     pollJobFn: gitApi.pollCommitsJob
+  });
+
+  // Job for branches
+  const { 
+    start: fetchBranches, 
+    status: branchesStatus, 
+    result: branches, 
+    error: branchesError 
+  } = useJobPolling<string[]>({
+    startJobFn: (url) => gitApi.startBranchesJob(url),
+    pollJobFn: gitApi.pollBranchesJob
   });
 
   // Job for file
@@ -50,8 +61,6 @@ export default function Home() {
     }
   }, [chosenFilePath, selectedCommitIndex, commits]); 
 
-  //console.log("commits: ", commits)
-
   return (
     <div className="flex min-h-screen font-sans bg-[#0b1117] text-[#c9d1d9]">
       <div className="flex w-full">
@@ -73,13 +82,16 @@ export default function Home() {
             repoUrl={repoUrl}
             setRepoUrl={setRepoUrl}
             setChosenFilePath={setChosenFilePath}
-            fetchCommits={fetchCommits}  
+            fetchCommits={fetchCommits}
+            fetchBranches={fetchBranches}
           />
 
           {commits &&
             <CommitInfo 
               commit={commits[selectedCommitIndex]}
               repoUrl={repoUrl}
+              branches={branches}
+              fetchCommits={fetchCommits}
             />
           }
 

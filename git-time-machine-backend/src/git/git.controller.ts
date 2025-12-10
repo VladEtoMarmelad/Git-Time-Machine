@@ -6,11 +6,12 @@ export class GitController {
   constructor(private readonly gitService: GitService) {}
   
   @Post("/getCommits")
-  async getCommits(@Body("repoUrl") repoUrl: string) {
+  async getCommits(@Body() body: {repoUrl: string; branch: string|null}) {
+    const { repoUrl, branch } = body;
     if (!repoUrl || !repoUrl.startsWith("https://github.com/")) {
       throw new HttpException("Invalid GitHub repository URL provided.", HttpStatus.BAD_REQUEST);
     }
-    return this.gitService.getCommits(repoUrl);
+    return this.gitService.getCommits(repoUrl, branch);
   }
 
   @Get("/getCommits/:jobId")
@@ -29,6 +30,19 @@ export class GitController {
 
   @Get("/file/:jobId")
   async getFileContentJobStatus(@Param("jobId") jobId: string) {
+    return this.gitService.getJobStatus(jobId);
+  }
+
+  @Post("/branches")
+  async branches(@Body("repoUrl") repoUrl: string) {
+    if (!repoUrl || !repoUrl.startsWith("https://github.com/")) {
+      throw new HttpException("Invalid GitHub repository URL provided.", HttpStatus.BAD_REQUEST);
+    }
+    return this.gitService.getBranches(repoUrl);
+  }
+
+  @Get("/branches/:jobId")
+  async getBranches(@Param("jobId") jobId: string) {
     return this.gitService.getJobStatus(jobId);
   }
 }
