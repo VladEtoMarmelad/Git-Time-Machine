@@ -14,6 +14,7 @@ import { CommitInfo } from "@/components/CommitInfo";
 
 export default function Home() {
   const [selectedCommitIndex, setSelectedCommitIndex] = useState<number>(0);
+  const [selectedBranch, setSelectedBranch] = useState<string>("");
   const [chosenFilePath, setChosenFilePath] = useState<string | null>(null);
   const [repoUrl, setRepoUrl] = useState<string>("");
 
@@ -91,7 +92,9 @@ export default function Home() {
               commit={commits[selectedCommitIndex]}
               repoUrl={repoUrl}
               branches={branches}
+              selectedBranch={selectedBranch}
               fetchCommits={fetchCommits}
+              setSelectedBranch={setSelectedBranch}
             />
           }
 
