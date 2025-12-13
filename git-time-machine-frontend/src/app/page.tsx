@@ -10,7 +10,7 @@ import { useJobPolling } from "@/hooks/useJobPolling";
 import { gitApi } from "@/utils/gitApi";
 import { RepoUrlInput } from "@/components/RepoUrlInput";
 import { FileViewer } from "@/components/FileViewer";
-import { CommitInfo } from "@/components/CommitInfo";
+import { CommitInfo } from "@/components/CommitInfo/index";
 
 export default function Home() {
   const [selectedCommitIndex, setSelectedCommitIndex] = useState<number>(0);
@@ -61,6 +61,8 @@ export default function Home() {
       });
     }
   }, [chosenFilePath, selectedCommitIndex, commits]); 
+
+  console.log("commits: ", commits)
 
   return (
     <div className="flex min-h-screen font-sans bg-[#0b1117] text-[#c9d1d9]">
