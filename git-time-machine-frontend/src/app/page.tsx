@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react";
-import { FileTree } from "@/components/FileTree";
+import { FileTree } from "@/components/FileTree/FileTree";
 import { RangeSlider } from "@/components/RangeSlider";
 import { buildFileTree } from "@/utils/buildFileTree";
 import { File } from "@sharedTypes/File";
@@ -61,9 +61,7 @@ export default function Home() {
       });
     }
   }, [chosenFilePath, selectedCommitIndex, commits]); 
-
-  console.log("commits: ", commits)
-
+  
   return (
     <div className="flex min-h-screen font-sans bg-[#0b1117] text-[#c9d1d9]">
       <div className="flex w-full">

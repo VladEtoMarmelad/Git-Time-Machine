@@ -150,29 +150,45 @@ export class GitProcessor {
   async getFileContentFromCommit(job: Job<{ repoUrl: string, commitHash: string, filePath: string }>): Promise<File> {
     const { repoUrl, commitHash, filePath } = job.data;
 
+    // Helper to retrieve content
+    const gitShow = async (repoPath: string, hash: string, path: string): Promise<string | null> => {
+      try {
+        const command = `git --git-dir="${repoPath}" show ${hash}:${path}`;
+        const { stdout } = await execAsync(command, { maxBuffer: 1024 * 1024 * 10 });
+        return stdout;
+      } catch (e) {
+        // The file might not have existed in the previous version
+        return null;
+      }
+    };
+
     try {
-      // Use the same cache! It is instant if getCommits has already run
-      // We only need the repoPath here, ignoring the returned latest commit hash
       const { repoPath } = await this.ensureRepo(repoUrl, null);
 
-      // git show will automatically download the blob from the server (due to --filter=blob:none) if it is not local
-      const command = `git --git-dir="${repoPath}" show ${commitHash}:${filePath}`;
+      // 1. Get current content
+      const currentContent = await gitShow(repoPath, commitHash, filePath);
 
-      const { stdout: fileContent } = await execAsync(command, {
-        maxBuffer: 1024 * 1024 * 10, // 10 MB
-      });
+      if (currentContent === null) {
+        throw new Error("File not found in current commit");
+      }
+
+      // 2. Get content of the previous commit
+      // The ~1 symbol means "the first parent of this commit"
+      const previousContent = await gitShow(repoPath, `${commitHash}~1`, filePath);
 
       return {
         hash: commitHash,
         path: filePath,
-        content: fileContent,
+        content: currentContent,
+        previousContent: previousContent, // Can be null if the file is new
       };
 
     } catch (error) {
       return {
         hash: commitHash,
         path: filePath,
-        content: `Could not retrieve content for file "${filePath}" at commit "${commitHash}". It might not exist at that commit yet.`
+        content: `Error: ${error.message}`,
+        previousContent: null
       };
     }
   }

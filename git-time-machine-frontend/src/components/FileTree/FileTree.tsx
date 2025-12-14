@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { FileTreeItem as FileTreeItemType} from "@/types/FileTreeItem";
-import { FIleTreeItem } from "@/components/FileTreeItem";
+import { FIleTreeItem } from "@/components/FileTree/FileTreeItem";
 
 interface FileTreeProps {
   fileTreeItems: FileTreeItemType[];
