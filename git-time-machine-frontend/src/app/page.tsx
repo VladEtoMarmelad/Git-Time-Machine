@@ -9,7 +9,7 @@ import { Commit } from "@sharedTypes/Commit"
 import { useJobPolling } from "@/hooks/useJobPolling";
 import { gitApi } from "@/utils/gitApi";
 import { RepoUrlInput } from "@/components/RepoUrlInput";
-import { FileViewer } from "@/components/FileViewer";
+import { FileViewer } from "@/components/FileViewer/index";
 import { CommitInfo } from "@/components/CommitInfo/index";
 
 export default function Home() {

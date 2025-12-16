@@ -188,7 +188,7 @@ export class GitProcessor {
         hash: commitHash,
         path: filePath,
         content: `Error: ${error.message}`,
-        previousContent: null
+        previousContent: `Error: ${error.message}`
       };
     }
   }
