@@ -107,7 +107,7 @@ export class GitProcessor {
       // Important: ls-tree -r returns the list of ALL files. This is a heavy operation.
 
       // Chunking configuration
-      // If there are many commits, process them in batches of 10 to avoid killing the CPU
+      // If there are many commits, process them in batches of 10 to avoid overloading the CPU
       const concurrencyLimit = 10;
 
       for (let i = 0; i < commits.length; i += concurrencyLimit) {
@@ -205,5 +205,48 @@ export class GitProcessor {
       const match = line.match(/refs\/heads\/(.+)/);
       return match ? match[1] : null;
     }).filter((branch): branch is string => branch !== null); // Remove null (empty lines)
+  }
+
+  @Process("getForks")
+  async getForks(job: Job<{ repoUrl: string }>) {
+    const { repoUrl } = job.data;
+    const urlParts = repoUrl.replace("https://github.com/", "").split("/");
+    const owner = urlParts[0];
+    const repo = urlParts[1]?.replace(".git", "");
+
+    let allForks: any[] = [];
+    let page = 1;
+    const maxPages = 3; // Limit pages to avoid long wait times (3 pages x 100 = 300 forks)
+
+    try {
+      while (page <= maxPages) {
+        // Add per_page=100 (maximum) and the page number
+        const apiUrl = `https://api.github.com/repos/${owner}/${repo}/forks?per_page=100&page=${page}&sort=newest`;
+        
+        const response = await fetch(apiUrl, {
+          headers: {
+            'Accept': 'application/vnd.github.v3+json',
+            'User-Agent': 'NestJS-Git-App',
+            // 'Authorization': `token YOUR_TOKEN` // Highly recommended to avoid rate limits
+          }
+        });
+
+        const data = await response.json();
+        
+        if (!Array.isArray(data) || data.length === 0) break;
+
+        allForks.push(...data.map(fork => ({
+          name: fork.full_name,
+          url: fork.html_url
+        })));
+
+        if (data.length < 100) break; // If fewer than 100 items returned, it's the last page
+        page++;
+      }
+
+      return allForks;
+    } catch (error) {
+      throw error;
+    }
   }
 }

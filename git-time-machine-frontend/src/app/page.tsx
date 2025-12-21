@@ -11,6 +11,7 @@ import { gitApi } from "@/utils/gitApi";
 import { RepoUrlInput } from "@/components/RepoUrlInput";
 import { FileViewer } from "@/components/FileViewer/index";
 import { CommitInfo } from "@/components/CommitInfo/index";
+import { Repository } from "@sharedTypes/Repository";
 
 export default function Home() {
   const [selectedCommitIndex, setSelectedCommitIndex] = useState<number>(0);
@@ -40,6 +41,17 @@ export default function Home() {
     pollJobFn: gitApi.pollBranchesJob
   });
 
+  // Job for forks
+  const { 
+    start: fetchForks, 
+    status: forksStatus, 
+    result: forks, 
+    error: forksError 
+  } = useJobPolling<Repository[]>({
+    startJobFn: (url) => gitApi.startForksJob(url),
+    pollJobFn: gitApi.pollForksJob
+  });
+
   // Job for file
   const { 
     start: fetchFile, 
@@ -61,7 +73,7 @@ export default function Home() {
       });
     }
   }, [chosenFilePath, selectedCommitIndex, commits]); 
-  
+
   return (
     <div className="flex min-h-screen font-sans bg-[#0b1117] text-[#c9d1d9]">
       <div className="flex w-full">
@@ -85,6 +97,8 @@ export default function Home() {
             setChosenFilePath={setChosenFilePath}
             fetchCommits={fetchCommits}
             fetchBranches={fetchBranches}
+
+            fetchForks={fetchForks}
           />
 
           {commits &&
@@ -93,8 +107,12 @@ export default function Home() {
               repoUrl={repoUrl}
               branches={branches}
               selectedBranch={selectedBranch}
+              forks={forks}
               fetchCommits={fetchCommits}
+              fetchBranches={fetchBranches}
+              fetchForks={fetchForks}
               setSelectedBranch={setSelectedBranch}
+              
             />
           }
 

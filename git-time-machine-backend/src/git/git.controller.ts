@@ -45,4 +45,17 @@ export class GitController {
   async getBranches(@Param("jobId") jobId: string) {
     return this.gitService.getJobStatus(jobId);
   }
+
+  @Post("/forks")
+  async getForks(@Body("repoUrl") repoUrl: string) {
+    if (!repoUrl || !repoUrl.startsWith("https://github.com/")) {
+      throw new HttpException("Invalid GitHub repository URL provided.", HttpStatus.BAD_REQUEST);
+    }
+    return this.gitService.getForks(repoUrl);
+  }
+
+  @Get("/forks/:jobId")
+  async getForksStatus(@Param("jobId") jobId: string) {
+    return this.gitService.getJobStatus(jobId);
+  }
 }

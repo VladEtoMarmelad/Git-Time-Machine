@@ -40,5 +40,18 @@ export const gitApi = {
       result: res.data.result, // File
       failedReason: res.data.failedReason
     };
-  }
+  },
+
+  startForksJob: async (repoUrl: string) => {
+    const res = await axios.post(`${API_URL}/git/forks`, { repoUrl });
+    return res.data.jobId;
+  },
+  pollForksJob: async (id: string) => {
+    const res = await axios.get(`${API_URL}/git/forks/${id}`);
+    return { 
+      state: res.data.state, 
+      result: res.data.result, // string[]
+      failedReason: res.data.failedReason 
+    };
+  },
 };

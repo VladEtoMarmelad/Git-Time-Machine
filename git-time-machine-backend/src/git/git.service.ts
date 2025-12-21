@@ -22,6 +22,11 @@ export class GitService {
     return { jobId: job.id };
   }
 
+  async getForks(repoUrl: string) {
+    const job = await this.analysisQueue.add("getForks", { repoUrl });
+    return { jobId: job.id };
+  }
+
   async getJobStatus(jobId: string) {
     const job = await this.analysisQueue.getJob(jobId);
 
