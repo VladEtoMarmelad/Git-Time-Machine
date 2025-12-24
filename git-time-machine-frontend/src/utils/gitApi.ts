@@ -42,8 +42,8 @@ export const gitApi = {
     };
   },
 
-  startForksJob: async (repoUrl: string) => {
-    const res = await axios.post(`${API_URL}/git/forks`, { repoUrl });
+  startForksJob: async (repoUrl: string, maxForksAmount: number) => {
+    const res = await axios.post(`${API_URL}/git/forks`, { repoUrl, maxForksAmount });
     return res.data.jobId;
   },
   pollForksJob: async (id: string) => {

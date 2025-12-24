@@ -16,7 +16,8 @@ interface CommitInfoProps {
   fetchCommits: (params: any) => Promise<void>;
   fetchBranches: (params: any) => Promise<void>;
   fetchForks: (params: any) => Promise<void>;
-  setSelectedBranch: (branchName: string) => void
+  setSelectedBranch: (branchName: string) => void;
+  setRepoUrl: (newRepoUrl: string) => void
 }
 
 export const CommitInfo = ({ 
@@ -28,7 +29,8 @@ export const CommitInfo = ({
   fetchCommits,
   fetchBranches,
   fetchForks,
-  setSelectedBranch 
+  setSelectedBranch,
+  setRepoUrl
 }: CommitInfoProps) => {
   const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -63,9 +65,11 @@ export const CommitInfo = ({
           {hasForks && 
             <ForkDropdown 
               forks={forks} 
+              currentRepoUrl={repoUrl}
               fetchCommits={fetchCommits}
               fetchBranches={fetchBranches}
               fetchForks={fetchForks}
+              setRepoUrl={setRepoUrl}
             />
           }
 

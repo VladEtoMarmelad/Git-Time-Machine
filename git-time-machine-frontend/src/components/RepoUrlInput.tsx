@@ -20,7 +20,10 @@ export const RepoUrlInput = ({commitsStatus, repoUrl, setRepoUrl, setChosenFileP
       branch: ""
     });
     fetchBranches(repoUrl);
-    fetchForks(repoUrl)
+    fetchForks({
+      url: repoUrl,
+      maxForksAmount: 50
+    })
   };
 
   return (

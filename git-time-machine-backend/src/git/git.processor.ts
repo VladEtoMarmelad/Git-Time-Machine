@@ -208,41 +208,27 @@ export class GitProcessor {
   }
 
   @Process("getForks")
-  async getForks(job: Job<{ repoUrl: string }>) {
-    const { repoUrl } = job.data;
+  async getForks(job: Job<{ repoUrl: string, maxForksAmount: number }>) {
+    const { repoUrl, maxForksAmount } = job.data;
     const urlParts = repoUrl.replace("https://github.com/", "").split("/");
     const owner = urlParts[0];
     const repo = urlParts[1]?.replace(".git", "");
 
-    let allForks: any[] = [];
-    let page = 1;
-    const maxPages = 3; // Limit pages to avoid long wait times (3 pages x 100 = 300 forks)
-
     try {
-      while (page <= maxPages) {
-        // Add per_page=100 (maximum) and the page number
-        const apiUrl = `https://api.github.com/repos/${owner}/${repo}/forks?per_page=100&page=${page}&sort=newest`;
-        
-        const response = await fetch(apiUrl, {
-          headers: {
-            'Accept': 'application/vnd.github.v3+json',
-            'User-Agent': 'NestJS-Git-App',
-            // 'Authorization': `token YOUR_TOKEN` // Highly recommended to avoid rate limits
-          }
-        });
+      const apiUrl = `https://api.github.com/repos/${owner}/${repo}/forks?per_page=${maxForksAmount}&sort=newest`;
 
-        const data = await response.json();
-        
-        if (!Array.isArray(data) || data.length === 0) break;
+      const response = await fetch(apiUrl, {
+        headers: {
+          'Accept': 'application/vnd.github.v3+json',
+          'User-Agent': 'NestJS-Git-App'
+        }
+      });
 
-        allForks.push(...data.map(fork => ({
-          name: fork.full_name,
-          url: fork.html_url
-        })));
-
-        if (data.length < 100) break; // If fewer than 100 items returned, it's the last page
-        page++;
-      }
+      const data = await response.json();
+      const allForks = data.map(fork => ({
+        name: fork.full_name,
+        url: fork.html_url
+      }))
 
       return allForks;
     } catch (error) {

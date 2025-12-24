@@ -48,7 +48,7 @@ export default function Home() {
     result: forks, 
     error: forksError 
   } = useJobPolling<Repository[]>({
-    startJobFn: (url) => gitApi.startForksJob(url),
+    startJobFn: (params) => gitApi.startForksJob(params.url, params.maxForksAmount),
     pollJobFn: gitApi.pollForksJob
   });
 
@@ -97,7 +97,6 @@ export default function Home() {
             setChosenFilePath={setChosenFilePath}
             fetchCommits={fetchCommits}
             fetchBranches={fetchBranches}
-
             fetchForks={fetchForks}
           />
 
@@ -112,7 +111,7 @@ export default function Home() {
               fetchBranches={fetchBranches}
               fetchForks={fetchForks}
               setSelectedBranch={setSelectedBranch}
-              
+              setRepoUrl={setRepoUrl}
             />
           }
 

@@ -47,11 +47,12 @@ export class GitController {
   }
 
   @Post("/forks")
-  async getForks(@Body("repoUrl") repoUrl: string) {
+  async getForks(@Body() body: {repoUrl: string; maxForksAmount: number}) {
+    const { repoUrl, maxForksAmount } = body;
     if (!repoUrl || !repoUrl.startsWith("https://github.com/")) {
       throw new HttpException("Invalid GitHub repository URL provided.", HttpStatus.BAD_REQUEST);
     }
-    return this.gitService.getForks(repoUrl);
+    return this.gitService.getForks(repoUrl, maxForksAmount);
   }
 
   @Get("/forks/:jobId")
