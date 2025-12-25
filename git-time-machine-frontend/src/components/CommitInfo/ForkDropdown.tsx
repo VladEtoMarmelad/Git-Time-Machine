@@ -12,6 +12,7 @@ interface ForkDropdownProps {
 }
 
 const ITEMS_PER_PAGE = 10;
+const MAX_ALLOWED_FORKS = 1000; // Define your max limit here
 
 export const ForkDropdown = ({ 
   forks, 
@@ -23,7 +24,6 @@ export const ForkDropdown = ({
 }: ForkDropdownProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  
   const [maxForksAmount, setForksAmount] = useState(50);
   const [maxForksAmountInputValue, setMaxForksAmountInputValue] = useState(String(maxForksAmount));
   
@@ -53,7 +53,7 @@ export const ForkDropdown = ({
 
   const handleApplyRefetch = () => {
     const amount = parseInt(maxForksAmountInputValue) || 10;
-    const clampedAmount = Math.max(1, Math.min(amount, 1000)); // Limit from 1 to 1000
+    const clampedAmount = Math.max(1, Math.min(amount, MAX_ALLOWED_FORKS));
     
     setForksAmount(clampedAmount);
     setMaxForksAmountInputValue(String(clampedAmount));
@@ -72,8 +72,23 @@ export const ForkDropdown = ({
     setIsOpen(false);
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    // Allow digits only (or empty string)
+    if (value === "" || /^\d+$/.test(value)) {
+      setMaxForksAmountInputValue(value);
+    }
+  };
+
+  // Helper for arrow buttons
+  const adjustAmount = (difference: number) => {
+    const currentVal = parseInt(maxForksAmountInputValue) || 0;
+    const newVal = Math.max(1, Math.min(currentVal + difference, MAX_ALLOWED_FORKS));
+    setMaxForksAmountInputValue(String(newVal));
+  };
+
   return (
-    <div ref={dropdownRef} className="relative h-full">
+    <div ref={dropdownRef} className="relative h-full" style={{scrollbarColor: 'gray #161b22'}}>
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={`flex items-center gap-2 px-3 h-full text-xs font-medium border rounded-md transition-colors 
@@ -91,23 +106,42 @@ export const ForkDropdown = ({
 
       {isOpen && (
         <div className="absolute right-0 top-full mt-2 w-72 z-50 bg-[#161b22] border border-[#30363d] rounded-md shadow-xl flex flex-col overflow-hidden">
-          {/* Header */}
           <div className="px-3 py-2 text-xs font-bold text-[#e6edf3] border-b border-[#30363d] bg-[#161b22]">
             Select a fork
           </div>
 
-          {/* Controls Panel */}
           <div className="p-3 border-b border-[#30363d] bg-[#0d1117] flex items-center gap-2">
             <div className="flex flex-col flex-1 gap-1">
               <label htmlFor="fork-amount" className="text-[10px] text-[#8b949e]">Fetch amount:</label>
-              <input
-                id="fork-amount"
-                type="number"
-                value={maxForksAmountInputValue}
-                onChange={(e) => setMaxForksAmountInputValue(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleApplyRefetch()}
-                className="w-full bg-[#0d1117] border border-[#30363d] rounded px-2 py-1 text-xs text-[#c9d1d9] focus:border-[#58a6ff] focus:outline-none"
-              />
+              
+              <div className="flex items-center bg-[#010409] border border-[#30363d] rounded-md overflow-hidden">
+                <input 
+                  id="fork-amount"
+                  type="text" // Using text to avoid browser default arrows entirely
+                  value={maxForksAmountInputValue}
+                  onChange={handleInputChange}
+                  onKeyDown={(e) => e.key === 'Enter' && handleApplyRefetch()}
+                  className="w-12 text-center bg-transparent border-none outline-none text-xs text-[#c9d1d9] py-1"
+                />
+                <div className="flex flex-col border-l border-[#30363d] ml-auto">
+                  <button 
+                    onClick={() => adjustAmount(1)} 
+                    className="px-1.5 py-0.5 hover:bg-[#30363d] text-[#8b949e] hover:text-white"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 15l7-7 7 7" />
+                    </svg>
+                  </button>
+                  <button 
+                    onClick={() => adjustAmount(-1)} 
+                    className="px-1.5 py-0.5 border-t border-[#30363d] hover:bg-[#30363d] text-[#8b949e] hover:text-white"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
             </div>
             <button
               onClick={handleApplyRefetch}
@@ -117,7 +151,6 @@ export const ForkDropdown = ({
             </button>
           </div>
 
-          {/* Forks List */}
           <ul className="max-h-64 overflow-y-auto py-1 custom-scrollbar">
             {currentForks.length > 0 ? (
               currentForks.map((fork) => (
@@ -136,7 +169,6 @@ export const ForkDropdown = ({
             )}
           </ul>
 
-          {/* Pagination */}
           {totalPages > 1 && (
             <div className="flex items-center justify-between px-3 py-2 border-t border-[#30363d] bg-[#161b22]">
               <button
