@@ -37,6 +37,15 @@ Before you begin, ensure you have the following installed on your system:
 -   **Git:** Must be installed and accessible from your system's command line.
 -   **Docker:** Required to run the Redis instance.
 
+## Configuration
+The backend requires environment variables to interact with GitHub API effectively.
+
+1. **Create .env file**: In `git-time-machine-backend`, copy `.env.example` to `.env`.
+2. **GitHub Token**:
+  - Go to [GitHub Token Settings](https://github.com/settings/tokens).
+  - Generate a "Classic" token with `public_repo` scope.
+  - Paste it into `GITHUB_TOKEN` in your `.env` file.
+
 ## Installation
 
 Follow these steps to get the project set up on your local machine.

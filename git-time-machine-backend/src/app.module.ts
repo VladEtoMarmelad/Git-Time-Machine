@@ -3,6 +3,7 @@ import { BullModule } from '@nestjs/bull';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { GitModule } from './git/git.module';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
@@ -12,7 +13,8 @@ import { GitModule } from './git/git.module';
         host: "localhost",
         port: 6379
       }
-    })
+    }),
+    ConfigModule.forRoot()
   ],
   controllers: [AppController],
   providers: [AppService],

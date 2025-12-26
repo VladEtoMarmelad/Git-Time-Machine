@@ -5,6 +5,7 @@ import { exec } from "child_process";
 import { promisify } from "util";
 import { Commit } from "@sharedTypes/Commit";
 import { File } from "@sharedTypes/File";
+import { Repository } from "@sharedTypes/Repository";
 import { Mutex, MutexInterface } from "async-mutex";
 import * as path from "path";
 import * as os from "os";
@@ -214,24 +215,48 @@ export class GitProcessor {
     const owner = urlParts[0];
     const repo = urlParts[1]?.replace(".git", "");
 
-    try {
-      const apiUrl = `https://api.github.com/repos/${owner}/${repo}/forks?per_page=${maxForksAmount}&sort=newest`;
+    const GITHUB_LIMIT = 100; // GitHub API maximum limit
+    const allForks: Repository[] = [];
+    
+    // Calculate the number of pages to fetch
+    const pagesToFetch = Math.ceil(maxForksAmount / GITHUB_LIMIT);
 
-      const response = await fetch(apiUrl, {
-        headers: {
-          'Accept': 'application/vnd.github.v3+json',
-          'User-Agent': 'NestJS-Git-App'
-        }
+    try {
+      // Perform requests in parallel for better performance
+      const requests = Array.from({ length: pagesToFetch }, async (_, i) => {
+        const page = i + 1;
+        const apiUrl = `https://api.github.com/repos/${owner}/${repo}/forks?per_page=${GITHUB_LIMIT}&page=${page}&sort=newest`;
+        
+        return fetch(apiUrl, {
+          headers: {
+            'Accept': 'application/vnd.github.v3+json',
+            'User-Agent': 'NestJS-Git-App',
+            'Authorization': `Bearer ${process.env.GITHUB_TOKEN}`
+          }
+        }).then(res => res.json());
       });
 
-      const data = await response.json();
-      const allForks = data.map(fork => ({
-        name: fork.full_name,
-        url: fork.html_url
-      }))
+      const results = await Promise.all(requests);
 
-      return allForks;
+      // Collect all results into a single array
+      for (const data of results) {
+        if (Array.isArray(data)) {
+          const mapped = data.map(fork => ({
+            name: fork.full_name,
+            url: fork.html_url
+          }));
+          allForks.push(...mapped);
+
+          // If fewer than 100 items are returned, there are no more forks; stop processing
+          if (data.length < GITHUB_LIMIT) break;
+        }
+      }
+
+      // Return only the exact amount requested by the user
+      return allForks.slice(0, maxForksAmount);
+      
     } catch (error) {
+      console.error("Error fetching forks:", error);
       throw error;
     }
   }
