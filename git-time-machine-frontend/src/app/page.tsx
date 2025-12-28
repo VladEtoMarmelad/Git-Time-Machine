@@ -10,7 +10,7 @@ import { useJobPolling } from "@/hooks/useJobPolling";
 import { gitApi } from "@/utils/gitApi";
 import { RepoUrlInput } from "@/components/RepoUrlInput";
 import { FileViewer } from "@/components/FileViewer/index";
-import { CommitInfo } from "@/components/CommitInfo/index";
+import { RepoAndCommitInfo } from "@/components/RepoAndCommitInfo/index";
 import { Repository } from "@sharedTypes/Repository";
 
 export default function Home() {
@@ -30,15 +30,15 @@ export default function Home() {
     pollJobFn: gitApi.pollCommitsJob
   });
 
-  // Job for branches
+  // Job for repository metadata
   const { 
-    start: fetchBranches, 
-    status: branchesStatus, 
-    result: branches, 
-    error: branchesError 
-  } = useJobPolling<string[]>({
-    startJobFn: (url) => gitApi.startBranchesJob(url),
-    pollJobFn: gitApi.pollBranchesJob
+    start: fetchRepositoryMetadata, 
+    status: repositoryMetadataStatus, 
+    result: repositoryMetadata, 
+    error: repositoryMetadataError 
+  } = useJobPolling<any[]>({
+    startJobFn: (url) => gitApi.startRepositoryMetadataJob(url),
+    pollJobFn: gitApi.pollRepositoryMetadataJob
   });
 
   // Job for forks
@@ -96,19 +96,19 @@ export default function Home() {
             setRepoUrl={setRepoUrl}
             setChosenFilePath={setChosenFilePath}
             fetchCommits={fetchCommits}
-            fetchBranches={fetchBranches}
+            fetchRepositoryMetadata={fetchRepositoryMetadata}
             fetchForks={fetchForks}
           />
 
           {commits &&
-            <CommitInfo 
+            <RepoAndCommitInfo 
               commit={commits[selectedCommitIndex]}
               repoUrl={repoUrl}
-              branches={branches}
+              repositoryMetadata={repositoryMetadata}
               selectedBranch={selectedBranch}
               forks={forks}
               fetchCommits={fetchCommits}
-              fetchBranches={fetchBranches}
+              fetchRepositoryMetadata={fetchRepositoryMetadata}
               fetchForks={fetchForks}
               setSelectedBranch={setSelectedBranch}
               setRepoUrl={setRepoUrl}

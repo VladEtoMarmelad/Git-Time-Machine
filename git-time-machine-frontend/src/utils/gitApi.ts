@@ -16,15 +16,15 @@ export const gitApi = {
     };
   },
 
-  startBranchesJob: async (repoUrl: string) => {
-    const res = await axios.post(`${API_URL}/git/branches`, { repoUrl });
+  startRepositoryMetadataJob: async (repoUrl: string) => {
+    const res = await axios.post(`${API_URL}/git/repositoryMetadata`, { repoUrl });
     return res.data.jobId;
   },
-  pollBranchesJob: async (id: string) => {
-    const res = await axios.get(`${API_URL}/git/branches/${id}`);
+  pollRepositoryMetadataJob: async (id: string) => {
+    const res = await axios.get(`${API_URL}/git/repositoryMetadata/${id}`);
     return { 
       state: res.data.state, 
-      result: res.data.result, // string[]
+      result: res.data.result,
       failedReason: res.data.failedReason 
     };
   },

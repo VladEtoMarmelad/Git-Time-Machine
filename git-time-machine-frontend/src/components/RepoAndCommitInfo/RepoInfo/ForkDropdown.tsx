@@ -1,12 +1,12 @@
 import { useState, useRef, useEffect } from "react";
 import { Repository } from "@sharedTypes/Repository";
-import { CaretIcon, ForkIcon } from "../icons";
+import { CaretIcon, ForkIcon } from "@/components/icons";
 
 interface ForkDropdownProps {
   forks: Repository[];
   currentRepoUrl: string; 
   fetchCommits: (params: any) => Promise<void>;
-  fetchBranches: (params: any) => Promise<void>;
+  fetchRepositoryMetadata: (params: any) => Promise<void>;
   fetchForks: (params: any) => Promise<void>;
   setRepoUrl: (newRepoUrl: string) => void;
 }
@@ -18,7 +18,7 @@ export const ForkDropdown = ({
   forks, 
   currentRepoUrl,
   fetchCommits, 
-  fetchBranches, 
+  fetchRepositoryMetadata, 
   fetchForks, 
   setRepoUrl 
 }: ForkDropdownProps) => {
@@ -66,7 +66,7 @@ export const ForkDropdown = ({
 
   const handleForkSelect = (repoUrl: string) => {
     fetchCommits({ url: repoUrl });
-    fetchBranches(repoUrl);
+    fetchRepositoryMetadata(repoUrl);
     fetchForks({ url: repoUrl, maxForksAmount });
     setRepoUrl(repoUrl);
     setIsOpen(false);

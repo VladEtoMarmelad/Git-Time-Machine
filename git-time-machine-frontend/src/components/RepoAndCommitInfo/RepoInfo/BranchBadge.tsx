@@ -1,4 +1,4 @@
-import { BranchIcon } from "../icons"
+import { BranchIcon } from "@/components/icons"
 
 export const BranchBadge = ({selectedBranch}: {selectedBranch: string}) => {
   return (

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CheckIcon, CopyIcon } from "../icons"
+import { CheckIcon, CopyIcon } from "@/components/icons"
 
 interface CopyableCommitHashProps {
   hash: string;

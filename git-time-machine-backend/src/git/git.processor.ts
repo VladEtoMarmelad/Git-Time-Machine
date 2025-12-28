@@ -260,4 +260,46 @@ export class GitProcessor {
       throw error;
     }
   }
+
+  @Process("getRepositoryMetadata")
+  async getRepositoryMetadata(job: Job<{ repoUrl: string }>) {
+    const { repoUrl } = job.data;
+
+    const getBranches = async (): Promise<string[]> => {
+      const getBranchesCommand = `git ls-remote --heads ${repoUrl}`;
+      const { stdout: branchesOutput } = await execAsync(getBranchesCommand);
+
+      return branchesOutput.split("\n").map(line => {
+        // Look for a match after refs/heads/ and capture everything until the end of the line
+        const match = line.match(/refs\/heads\/(.+)/);
+        return match ? match[1] : null;
+      }).filter((branch): branch is string => branch !== null); // Remove null (empty lines)
+    }
+
+    const getStars = async () => {
+      const urlStart = "https://github.com/"
+      const url = `https://api.github.com/repos/${repoUrl.slice(urlStart.length)}`;
+
+      try {
+        const response = await fetch(url);
+
+        if (!response.ok) {
+          throw new Error(`GitHub API error: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        const stars = data.stargazers_count;
+        return stars;
+
+      } catch (error) {
+        console.error("Could not fetch repository stars:", error);
+        return null;
+      }
+    }
+
+    return {
+      branches: await getBranches(),
+      stars: await getStars()
+    }
+  }
 }

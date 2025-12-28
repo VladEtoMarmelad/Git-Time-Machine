@@ -6,11 +6,11 @@ interface RepoUrlInputProps {
   setRepoUrl: (newRepoUrl: string) => void;
   setChosenFilePath: (filePath: string|null) => void;
   fetchCommits: (params: any) => Promise<void>;
-  fetchBranches: (params: any) => Promise<void>;
+  fetchRepositoryMetadata: (params: any) => Promise<void>;
   fetchForks: (params: any) => Promise<void>
 }
 
-export const RepoUrlInput = ({commitsStatus, repoUrl, setRepoUrl, setChosenFilePath, fetchCommits, fetchBranches, fetchForks}: RepoUrlInputProps) => {
+export const RepoUrlInput = ({commitsStatus, repoUrl, setRepoUrl, setChosenFilePath, fetchCommits, fetchRepositoryMetadata, fetchForks}: RepoUrlInputProps) => {
 
   const handleStartAnalysis = () => {
     if (!repoUrl) return;
@@ -19,7 +19,7 @@ export const RepoUrlInput = ({commitsStatus, repoUrl, setRepoUrl, setChosenFileP
       url: repoUrl,
       branch: ""
     });
-    fetchBranches(repoUrl);
+    fetchRepositoryMetadata(repoUrl);
     fetchForks({
       url: repoUrl,
       maxForksAmount: 50

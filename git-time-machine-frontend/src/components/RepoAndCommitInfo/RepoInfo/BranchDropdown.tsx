@@ -1,5 +1,5 @@
 import { RefObject } from "react";
-import { BranchIcon, CaretIcon, CheckIcon } from "../icons";
+import { BranchIcon, CaretIcon, CheckIcon } from "@/components/icons";
 
 interface BranchDropdownProps {
   branches: string[];
