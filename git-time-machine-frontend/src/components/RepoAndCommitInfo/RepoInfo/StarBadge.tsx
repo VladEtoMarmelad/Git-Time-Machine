@@ -10,18 +10,11 @@ export const StarBadge = ({starsAmount}: {starsAmount: number}) => {
   };
 
   return (
-    <div className="inline-flex items-center overflow-hidden rounded-md border border-[#30363d] bg-[#0d1117] text-sm font-medium">
-      <button 
-        className="flex items-center gap-2 bg-[#21262d] px-3 py-1.5 text-[#c9d1d9] transition-colors hover:bg-[#30363d]"
-        aria-label="Star this repository"
-      >
-        <StarIcon className="text-[#8b949e]" />
-        <span>Star</span>
-      </button>
-
-      <div className="border-l border-[#30363d] px-3 py-1.5 text-[#c9d1d9] bg-[#21262d]">
-        {formatCount(starsAmount)}
-      </div>
-    </div>
+    <section 
+      className="hidden md:flex items-center h-full px-2.5 text-xs font-medium text-[#7d8590] bg-[#388bfd1a] border border-[#388bfd66] rounded-md mr-1 bg-[#21262d] border-[#30363d] text-[#7d8590] hover:bg-[#30363d] hover:text-[#e6edf3]"
+    >
+      <StarIcon className="mr-1 fill-gray-400" />
+      <span className="max-w-[120px] truncate font-mono max-w-[100px] truncate ">{formatCount(starsAmount)}</span>
+    </section>
   )
 }

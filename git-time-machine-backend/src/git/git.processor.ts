@@ -13,6 +13,60 @@ import * as fs from "fs-extra";
 import * as crypto from "crypto";
 
 const execAsync = promisify(exec);
+const getGitObjects = async (repoUrl: string, type: "forks"|"branches", maxGitObjectsAmount: number) => {
+  const urlParts = repoUrl.replace("https://github.com/", "").split("/");
+  const owner = urlParts[0];
+  const repo = urlParts[1]?.replace(".git", "");
+
+  const GITHUB_LIMIT = 100; // GitHub API maximum limit
+  const allGitObjects: Repository[] = [];
+    
+  // Calculate the number of pages to fetch
+  const pagesToFetch = Math.ceil(maxGitObjectsAmount / GITHUB_LIMIT);
+
+  const mapper = {
+    forks: (item: any): any => ({
+      name: item.full_name,
+      url: item.html_url
+    }),
+    branches: (item: any) => item.name
+  };
+
+  try {
+    for (let page = 1; page <= pagesToFetch; page++) {
+      // GitHub API: сортировка 'newest' работает для forks, 
+      // но для branches параметры могут отличаться (у веток нет прямой сортировки по дате в этом эндпоинте)
+      const query = `per_page=${GITHUB_LIMIT}&page=${page}${type === 'forks' ? '&sort=newest' : ''}`;
+      const apiUrl = `https://api.github.com/repos/${owner}/${repo}/${type}?${query}`;
+
+      const response = await fetch(apiUrl, {
+        headers: {
+          'Accept': 'application/vnd.github.v3+json',
+          'User-Agent': 'NestJS-Git-App',
+          'Authorization': `Bearer ${process.env.GITHUB_TOKEN}`
+        }
+      });
+
+      if (!response.ok) throw new Error(`GitHub API error: ${response.statusText}`);
+
+      const data = await response.json();
+      if (!Array.isArray(data) || data.length === 0) break;
+
+      const mappedData = data.map(mapper[type]);
+      allGitObjects.push(...mappedData);
+
+      // Если получили меньше, чем просили у API, значит данных больше нет
+      if (data.length < GITHUB_LIMIT) break;
+      // Если уже набрали достаточное количество
+      if (allGitObjects.length >= maxGitObjectsAmount) break;
+    }
+
+    return allGitObjects.slice(0, maxGitObjectsAmount);
+  } catch (error) {
+    console.error(`Error fetching ${type}:`, error);
+    throw error;
+  }
+}
 
 @Processor("git-analysis")
 export class GitProcessor {
@@ -211,70 +265,12 @@ export class GitProcessor {
   @Process("getForks")
   async getForks(job: Job<{ repoUrl: string, maxForksAmount: number }>) {
     const { repoUrl, maxForksAmount } = job.data;
-    const urlParts = repoUrl.replace("https://github.com/", "").split("/");
-    const owner = urlParts[0];
-    const repo = urlParts[1]?.replace(".git", "");
-
-    const GITHUB_LIMIT = 100; // GitHub API maximum limit
-    const allForks: Repository[] = [];
-    
-    // Calculate the number of pages to fetch
-    const pagesToFetch = Math.ceil(maxForksAmount / GITHUB_LIMIT);
-
-    try {
-      // Perform requests in parallel for better performance
-      const requests = Array.from({ length: pagesToFetch }, async (_, i) => {
-        const page = i + 1;
-        const apiUrl = `https://api.github.com/repos/${owner}/${repo}/forks?per_page=${GITHUB_LIMIT}&page=${page}&sort=newest`;
-        
-        return fetch(apiUrl, {
-          headers: {
-            'Accept': 'application/vnd.github.v3+json',
-            'User-Agent': 'NestJS-Git-App',
-            'Authorization': `Bearer ${process.env.GITHUB_TOKEN}`
-          }
-        }).then(res => res.json());
-      });
-
-      const results = await Promise.all(requests);
-
-      // Collect all results into a single array
-      for (const data of results) {
-        if (Array.isArray(data)) {
-          const mapped = data.map(fork => ({
-            name: fork.full_name,
-            url: fork.html_url
-          }));
-          allForks.push(...mapped);
-
-          // If fewer than 100 items are returned, there are no more forks; stop processing
-          if (data.length < GITHUB_LIMIT) break;
-        }
-      }
-
-      // Return only the exact amount requested by the user
-      return allForks.slice(0, maxForksAmount);
-      
-    } catch (error) {
-      console.error("Error fetching forks:", error);
-      throw error;
-    }
+    return await getGitObjects(repoUrl, "forks", maxForksAmount)
   }
 
   @Process("getRepositoryMetadata")
   async getRepositoryMetadata(job: Job<{ repoUrl: string }>) {
     const { repoUrl } = job.data;
-
-    const getBranches = async (): Promise<string[]> => {
-      const getBranchesCommand = `git ls-remote --heads ${repoUrl}`;
-      const { stdout: branchesOutput } = await execAsync(getBranchesCommand);
-
-      return branchesOutput.split("\n").map(line => {
-        // Look for a match after refs/heads/ and capture everything until the end of the line
-        const match = line.match(/refs\/heads\/(.+)/);
-        return match ? match[1] : null;
-      }).filter((branch): branch is string => branch !== null); // Remove null (empty lines)
-    }
 
     const getStars = async () => {
       const urlStart = "https://github.com/"
@@ -298,7 +294,7 @@ export class GitProcessor {
     }
 
     return {
-      branches: await getBranches(),
+      branches: await getGitObjects(repoUrl, "branches", 100),
       stars: await getStars()
     }
   }
