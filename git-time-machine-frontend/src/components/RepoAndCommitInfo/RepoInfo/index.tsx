@@ -4,6 +4,7 @@ import { BranchDropdown } from "./BranchDropdown"
 import { ForkDropdown } from "./ForkDropdown"
 import { useEffect, useRef, useState } from "react";
 import { StarBadge } from "./StarBadge";
+import { DescriptionDropdown } from "./DescriptionDropdown";
 
 interface RepoInfoProps {
   repositoryMetadata: any;
@@ -41,6 +42,8 @@ export const RepoInfo = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  console.log("repositoryMetadata: ", repositoryMetadata)
+
   const hasBranches = repositoryMetadata.branches && repositoryMetadata.branches.length > 0;
   const hasForks = forks && forks.length > 0;
 
@@ -73,7 +76,9 @@ export const RepoInfo = ({
           isBranchDropdownOpen={isBranchDropdownOpen} 
           dropdownRef={dropdownRef}           
         />
-      }    
+      }  
+
+      <DescriptionDropdown repoDescription={repositoryMetadata.description}/>  
 
       <StarBadge starsAmount={repositoryMetadata.stars}/>
     </>
