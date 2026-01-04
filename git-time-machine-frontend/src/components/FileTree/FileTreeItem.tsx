@@ -1,52 +1,61 @@
 import { FileTreeItem as FileTreeItemType } from "@/types/FileTreeItem";
+import { FileStatus } from "@sharedTypes/FileStatus";
 
-interface FileTreeItmeProps {
+interface FileTreeItemProps {
   fileTreeItem: FileTreeItemType;
   level?: number;
   expanded: Set<string>;
-  toggle: (path: string) => void;
   choosedFile?: string | null;
+  toggle: (path: string) => void;
   onSelect?: (path: string) => void;
 }
 
-export const FIleTreeItem = ({ fileTreeItem, level = 0, expanded, toggle, choosedFile, onSelect }: FileTreeItmeProps) => {
+// Function to get color depending on status
+const getStatusColor = (status: FileStatus) => {
+  switch (status) {
+    case 'added': return 'text-green-400';    // New file
+    case 'modified': return 'text-amber-400'; // Modified file
+    default: return 'text-[#8b949e]';         // Unchanged file
+  }
+};
+
+export const FIleTreeItem = ({ fileTreeItem, level = 0, expanded, toggle, choosedFile, onSelect }: FileTreeItemProps) => {
   const indent = { paddingLeft: `${level * 12}px` };
   const isSelected = choosedFile === fileTreeItem.path;
+  const statusColor = getStatusColor(fileTreeItem.status);
 
   return (
-    <div>
-      <div className={`flex items-center rounded-md ${isSelected ? 'bg-[#0f3c6e] text-white' : 'hover:bg-[#111827]'} transition-colors`} style={indent}>
+    <>
+      <div 
+        className={`flex items-center group rounded-md ${isSelected ? 'bg-[#1e293b] text-white' : 'hover:bg-[#161b22]'} transition-colors cursor-pointer`} 
+        style={indent}
+      >
         {fileTreeItem.isFile ? (
           <button
-            className={`text-left w-full truncate px-2 py-1 ${isSelected ? 'font-semibold' : 'text-[#c9d1d9]'}`}
+            className={`flex items-center w-full text-left truncate px-2 py-1 text-sm ${isSelected ? 'font-bold' : 'text-[#c9d1d9]'}`}
             onClick={() => onSelect?.(fileTreeItem.path)}
           >
-            <span className="mr-2 text-sm"><i className="bi bi-file-earmark"/></span>
-            <span className="align-middle">{fileTreeItem.name}</span>
+            <span className={`mr-2 ${statusColor}`}>
+              <i className="bi bi-file-earmark-code"/>
+            </span>
+            <span className="truncate">{fileTreeItem.name}</span>
           </button>
         ) : (
-          <button onClick={() => toggle(fileTreeItem.path)} className="flex items-center w-full px-2 py-1 text-[#8b949e]">
-            <span className="inline-block w-4">{expanded.has(fileTreeItem.path) ? "▾" : "▸"}</span>
-            <span className="font-medium">
-              {expanded.has(fileTreeItem.path) ? 
-                <i 
-                  className="bi bi-folder2-open" 
-                  style={{fontSize: 20}}
-                /> 
-                : 
-                <i 
-                  className="bi bi-folder2" 
-                  style={{fontSize: 20}}
-                /> 
-              } 
-              {fileTreeItem.name}
+          <button 
+            onClick={() => toggle(fileTreeItem.path)} 
+            className="flex items-center w-full px-2 py-1 text-sm text-[#8b949e]"
+          >
+            <span className="w-4 flex-shrink-0">{expanded.has(fileTreeItem.path) ? "▾" : "▸"}</span>
+            <span className={`mr-2 ${statusColor}`}>
+              {expanded.has(fileTreeItem.path) ? <i className="bi bi-folder2-open"/> : <i className="bi bi-folder2"/>}
             </span>
+            <span className="font-medium text-[#c9d1d9] truncate">{fileTreeItem.name}</span>
           </button>
         )}
       </div>
 
-      {fileTreeItem.children && expanded.has(fileTreeItem.path) ? (
-        <div>
+      {fileTreeItem.children && expanded.has(fileTreeItem.path) && (
+        <div className="mt-1">
           {fileTreeItem.children.map((child) => (
             <FIleTreeItem
               key={child.path}
@@ -59,7 +68,7 @@ export const FIleTreeItem = ({ fileTreeItem, level = 0, expanded, toggle, choose
             />
           ))}
         </div>
-      ) : null}
-    </div>
+      )}
+    </>
   );
 };

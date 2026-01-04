@@ -42,8 +42,6 @@ export const RepoInfo = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  console.log("repositoryMetadata: ", repositoryMetadata)
-
   const hasBranches = repositoryMetadata.branches && repositoryMetadata.branches.length > 0;
   const hasForks = forks && forks.length > 0;
 

@@ -5,5 +5,5 @@ export interface Commit {
   date: string;
   files: File[];
   hash: string;
-  message: string
+  message: string;
 }

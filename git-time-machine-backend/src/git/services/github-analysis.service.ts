@@ -5,6 +5,7 @@ import { exec } from "child_process";
 import { promisify } from "util";
 import { Mutex, MutexInterface } from "async-mutex";
 import { File } from "@sharedTypes/File";
+import { FileStatus } from "@sharedTypes/FileStatus";
 import * as path from "path";
 import * as os from "os";
 import * as fs from "fs-extra";
@@ -38,7 +39,7 @@ export class GithubAnalysisService implements OnModuleInit {
 
     try {
       this.logger.debug(`Checking remote: ${repoUrl} (${targetRef})`);
-      
+
       // Get the hash of the latest commit on the remote branch
       const { stdout: remoteOutput } = await execAsync(`git ls-remote "${repoUrl}" "${targetRef}"`);
       const remoteCommitHash = remoteOutput.split(/\s+/)[0];
@@ -73,126 +74,133 @@ export class GithubAnalysisService implements OnModuleInit {
     try {
       const { repoPath, commitHash } = await this.ensureRepo(repoUrl, branch);
 
-      // 1. Fetch the commit log
-      // Use a special separator (ASCII 31) to avoid issues with "|" characters in commit messages
       const logFormat = "%H%x1F%an%x1F%ad%x1F%s";
       const logCommand = `git --git-dir="${repoPath}" log ${commitHash} --pretty=format:"${logFormat}" --date=iso`;
-      
       const { stdout: logOutput } = await execAsync(logCommand, { maxBuffer: 1024 * 1024 * 30 });
 
-      const commits: Commit[] = logOutput
-        .split("\n")
-        .filter(Boolean)
-        .map((line) => {
-          const [hash, author, date, message] = line.split("\x1F");
-          return { hash, author, date, message, files: [] };
-        });
+      const commits: Commit[] = logOutput.split("\n").filter(Boolean).map((line) => {
+        const [hash, author, date, message] = line.split("\x1F");
+        return { hash, author, date, message, files: [] };
+      });
 
-      if (commits.length === 0) {
-        this.logger.warn(`No commits found for ${repoUrl}`);
-        return { commits: [] };
-      }
+      this.logger.log(`Processing ${commits.length} commits with statuses...`);
 
-      this.logger.log(`Processing ${commits.length} commits for job ${jobId}`);
-
-      // 2. Fetch the file structure for each commit (Chunking)
       const concurrencyLimit = 10;
       for (let i = 0; i < commits.length; i += concurrencyLimit) {
         const chunk = commits.slice(i, i + concurrencyLimit);
 
-        await Promise.all(
-          chunk.map(async (commit) => {
-            try {
-              const command = `git --git-dir="${repoPath}" ls-tree -r --name-only ${commit.hash}`;
-              const { stdout: filesOutput } = await execAsync(command, {
-                maxBuffer: 1024 * 1024 * 50,
-              });
+        await Promise.all(chunk.map(async (commit) => {
+          try {
+            // 1. Get ALL files in this commit
+            const allFilesCmd = `git --git-dir="${repoPath}" ls-tree -r --name-only ${commit.hash}`;
+            const { stdout: allFilesOut } = await execAsync(allFilesCmd, { maxBuffer: 1024 * 1024 * 20 });
+            const allFilesList = allFilesOut.split("\n").filter(Boolean);
 
-              commit.files = filesOutput
-                .split("\n")
-                .map((s) => s.trim())
-                .filter(Boolean)
-                .map((p) => ({ path: p }));
-            } catch (e) {
-              this.logger.error(`Error getting tree for ${commit.hash}: ${e.message}`);
-              commit.files = [];
-            }
-          })
-        );
+            // 2. Get changes for this commit relative to its parent
+            // --root allows handling the initial commit correctly without dummy empty tree IDs
+            const diffCmd = `git --git-dir="${repoPath}" diff-tree -r --no-commit-id --name-status --root ${commit.hash}`;
+            const { stdout: diffOut } = await execAsync(diffCmd);
+
+            const statusMap = new Map<string, FileStatus>();
+
+            diffOut.split("\n").filter(Boolean).forEach(line => {
+              // Git separates status and path with a TAB (\t).
+              // Find the first tab index to avoid breaking paths with spaces.
+              const firstTab = line.indexOf('\t');
+              if (firstTab === -1) return;
+
+              const statusChar = line.substring(0, firstTab).trim();
+              const filePath = line.substring(firstTab + 1).replace(/^"(.*)"$/, '$1').trim(); // Remove quotes if present
+
+              let status: FileStatus = 'unchanged';
+              if (statusChar.startsWith('A')) status = 'added';
+              else if (statusChar.startsWith('M')) status = 'modified';
+
+              statusMap.set(filePath, status);
+            });
+
+            // 3. Map status to each file
+            commit.files = allFilesList.map(filePath => {
+              // Clean path from potential Git quotes (happens with special characters)
+              const cleanPath = filePath.replace(/^"(.*)"$/, '$1');
+              return {
+                path: cleanPath,
+                status: statusMap.get(cleanPath) || 'unchanged'
+              };
+            });
+
+          } catch (e) {
+            this.logger.error(`Error processing ${commit.hash}: ${e.message}`);
+          }
+        }));
       }
 
-      // Return data in the correct order (reversing to match desired sequence)
       return { commits: commits.reverse() };
     } catch (error) {
       this.logger.error(`Task ${jobId} failed: ${error.message}`);
-      throw error; // Rethrow error so BullMQ can mark the task as Failed
+      throw error;
     }
   }
 
-  async getFileContent(repoUrl: string, filePath: string, hash: string): Promise<File | null> {
-    const urlParts = repoUrl.replace("https://github.com/", "").split("/");
-    const owner = urlParts[0];
-    const repo = urlParts[1]?.replace(".git", "");
+  async getFileContent(repoUrl: string, filePath: string, commitHash: string): Promise<File> {
+    // 1. Extract owner and repo from URL (https://github.com/owner/repo)
+    const urlParts = repoUrl.replace(/\.git$/, '').split('/');
+    const repo = urlParts.pop()!;
+    const owner = urlParts.pop()!;
 
-    try {
-      // 1. Get the content of the current version (by commit hash)
-      const { data: currentData } = await this.client.octokit.repos.getContent({
-        owner,
-        repo,
-        path: filePath,
-        ref: hash,
-      });
-
-      // Verify that it is a file and not a directory
-      if (Array.isArray(currentData) || !("content" in currentData)) {
-        return null;
-      }
-
-      const content = Buffer.from(currentData.content, "base64").toString("utf-8");
-
-      // 2. Attempt to fetch previous content
-      let previousContent: string | null = null;
-
+    // Helper to get content via Octokit
+    const getOctokitContent = async (ref: string): Promise<string | null> => {
       try {
-        // Search for commits for this file starting from the provided hash.
-        // Limit to 2 results to find the commit that existed immediately BEFORE the current one.
-        const { data: commits } = await this.client.octokit.repos.listCommits({
+        const response = await this.client.octokit.repos.getContent({
           owner,
           repo,
           path: filePath,
-          sha: hash,
-          per_page: 2, 
+          ref,
         });
 
-        // If at least 2 commits exist, then commits[1] represents the previous version of the file
-        if (commits.length >= 2) {
-          const prevHash = commits[1].sha;
-          const { data: prevData } = await this.client.octokit.repos.getContent({
-            owner,
-            repo,
-            path: filePath,
-            ref: prevHash,
-          });
-
-          if (!Array.isArray(prevData) && "content" in prevData) {
-            previousContent = Buffer.from(prevData.content, "base64").toString("utf-8");
-          }
+        // Check if it's a file, not a directory
+        if ("content" in response.data && !Array.isArray(response.data)) {
+          // Decode base64 to utf-8
+          return Buffer.from(response.data.content, "base64").toString("utf-8");
         }
-      } catch (e) {
-        console.error("Could not fetch previous content", e);
-        // Do not interrupt execution if history fetching fails
+        return null;
+      } catch (error: any) {
+        // 404 means the file didn't exist in this commit
+        if (error.status === 404) {
+          return null;
+        }
+        throw error;
+      }
+    };
+
+    try {
+      // 2. Get current content
+      const currentContent = await getOctokitContent(commitHash);
+
+      if (currentContent === null) {
+        throw new Error("File not found in current commit");
       }
 
+      // 3. Get content from the previous commit
+      // GitHub API supports ~1 syntax in the ref parameter
+      const previousContent = await getOctokitContent(`${commitHash}~1`);
+
       return {
+        hash: commitHash,
         path: filePath,
-        hash: currentData.sha, // or return the passed hash
-        content: content,
+        status: "unchanged",
+        content: currentContent,
         previousContent: previousContent,
       };
 
-    } catch (error) {
-      console.error("Error fetching file:", error);
-      return null;
+    } catch (error: any) {
+      return {
+        hash: commitHash,
+        path: filePath,
+        status: "unchanged",
+        content: `Error: ${error.message}`,
+        previousContent: `Error: ${error.message}`
+      };
     }
   }
 }

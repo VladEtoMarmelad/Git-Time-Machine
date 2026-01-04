@@ -1,13 +1,13 @@
 "use client"
 
 import { useState } from "react";
-import { FileTreeItem as FileTreeItemType} from "@/types/FileTreeItem";
 import { FIleTreeItem } from "@/components/FileTree/FileTreeItem";
+import { FileTreeItem as FileTreeItemType } from "@/types/FileTreeItem";
 
 interface FileTreeProps {
   fileTreeItems: FileTreeItemType[];
-  choosedFile?: string | null;
-  onSelect?: (path: string) => void;
+  choosedFile: string|null;
+  onSelect: (p: string) => void;
 }
 
 export const FileTree = ({ fileTreeItems, choosedFile, onSelect }: FileTreeProps) => {
@@ -16,26 +16,19 @@ export const FileTree = ({ fileTreeItems, choosedFile, onSelect }: FileTreeProps
   const toggle = (path: string) => {
     setExpanded((prev) => {
       const next = new Set(prev);
-      if (next.has(path)) {
-        next.delete(path)
-      } else {
-        next.add(path)
-      };
+      next.has(path) ? next.delete(path) : next.add(path);
       return next;
     });
   };
 
   return (
-    <aside 
-      className="bg-[#0d1117] text-[#c9d1d9] w-72 min-w-[260px] h-screen overflow-auto border-r border-[#30363d] p-3" 
-      style={{scrollbarColor: 'gray #0d1117', scrollbarWidth: 'thin'}}
-    >
-      <div className="text-xs font-semibold text-[#8b949e] mb-2">Files</div>
+    <aside className="bg-[#0d1117] text-[#c9d1d9] w-80 h-screen overflow-auto border-r border-[#30363d] p-3">
+      <div className="text-xs font-semibold text-[#8b949e] mb-4 uppercase tracking-wider">Explorer</div>
       <div className="space-y-1">
-        {fileTreeItems.map((fileTreeItem) => (
+        {fileTreeItems.map((item) => (
           <FIleTreeItem
-            key={fileTreeItem.path}
-            fileTreeItem={fileTreeItem}
+            key={item.path}
+            fileTreeItem={item}
             level={0}
             expanded={expanded}
             toggle={toggle}

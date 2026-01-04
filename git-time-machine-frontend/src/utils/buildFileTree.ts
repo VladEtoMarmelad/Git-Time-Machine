@@ -1,58 +1,54 @@
-import { File } from "@/types/File";
-import { FileTreeItem } from "@/types/FileTreeItem";
+import { FileTreeItem as FileTreeItemType} from "@/types/FileTreeItem";
+import { FileStatus } from "@sharedTypes/FileStatus";
+import { File } from "@sharedTypes/File";
 
-export const buildFileTree = (files: File[] = []): FileTreeItem[] => {
-  const rootMap = new Map<string, FileTreeItem>();
-
-  const ensureFileTreeItem = (map: Map<string, FileTreeItem>, path: string, name: string) => {
-    if (!map.has(path)) map.set(path, { name, path, children: [] });
-    return map.get(path)!;
-  };
-
-  const childrenMap = new Map<string, Map<string, FileTreeItem>>();
-
-  files.forEach((file) => {
-    const parts: string[] = file.path.split("/");
-    let path = "";
-    let parentMap = rootMap;
-
-    parts.forEach((part, index: number) => {
-      path = path ? `${path}/${part}` : part;
-
-      if (!childrenMap.has(path)) {
-        childrenMap.set(path, new Map())
-      };
-
-      const mapForParent = index === 0 ? rootMap : childrenMap.get(parts.slice(0, index).join("/"))!;
-
-      const fileTreeItem = ensureFileTreeItem(mapForParent, path, part);
-
+// Utility to transform a flat list of files into a tree structure
+export const buildFileTree = (files: File[]): FileTreeItemType[] => {
+  const root: any = {};
+  
+  files.forEach(file => {
+    const parts = file.path.split('/');
+    let current = root;
+    
+    parts.forEach((part, index) => {
+      if (!current[part]) {
+        current[part] = { 
+          __data: { 
+            name: part, 
+            path: parts.slice(0, index + 1).join('/'),
+            isFile: index === parts.length - 1,
+            status: 'unchanged' as FileStatus
+          } 
+        };
+      }
+      
+      // If it's a file, record its status
       if (index === parts.length - 1) {
-        fileTreeItem.isFile = true;
-        fileTreeItem.file = file;
-      } else {
-        if (!childrenMap.has(path)) childrenMap.set(path, new Map());
+        current[part].__data.status = file.status;
       }
-
-      parentMap = childrenMap.get(path)!;
-    })
-  })
-
-  const mapToArray = (map: Map<string, FileTreeItem>): FileTreeItem[] => {
-    const fileTreeItems: FileTreeItem[] = [];
-    for (const fileTreeItem of map.values()) {
-      const childMap = childrenMap.get(fileTreeItem.path);
-      if (childMap && childMap.size > 0) {
-        fileTreeItem.children = mapToArray(childMap);
-      }
-      fileTreeItems.push(fileTreeItem);
-    }
-    fileTreeItems.sort((a, b) => {
-      if (!!a.isFile === !!b.isFile) return a.name.localeCompare(b.name);
-      return a.isFile ? 1 : -1;
+      current = current[part];
     });
-    return fileTreeItems;
+  });
+
+  const convert = (obj: any): FileTreeItemType[] => {
+    return Object.keys(obj)
+      .filter(key => key !== '__data')
+      .map(key => {
+        const item = obj[key];
+        const children = convert(item);
+        const data = item.__data;
+
+        // Status logic for a FOLDER:
+        // If at least one child is modified or added, the folder is marked as 'modified'
+        if (children.length > 0) {
+          const hasChanged = children.some(c => c.status !== 'unchanged');
+          data.status = hasChanged ? 'modified' : 'unchanged';
+          data.children = children.sort((a, b) => (a.isFile === b.isFile ? a.name.localeCompare(b.name) : a.isFile ? 1 : -1));
+        }
+        
+        return data;
+      });
   };
 
-  return mapToArray(rootMap);
+  return convert(root).sort((a, b) => (a.isFile === b.isFile ? a.name.localeCompare(b.name) : a.isFile ? 1 : -1));
 };
