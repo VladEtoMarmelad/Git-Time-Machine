@@ -1,4 +1,4 @@
-import { File } from "@sharedTypes/File"
+import { File } from "@sharedTypes/index"
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import ReactDiffViewer, { DiffMethod } from 'react-diff-viewer-continued';

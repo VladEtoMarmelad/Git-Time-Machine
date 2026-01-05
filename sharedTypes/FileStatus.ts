@@ -1,1 +1,1 @@
-export type FileStatus = 'added' | 'modified' | 'unchanged';
+export type FileStatus = 'added' | 'modified' | 'deleted' | 'unchanged';

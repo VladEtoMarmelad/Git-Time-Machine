@@ -1,4 +1,4 @@
-import { Repository } from "@sharedTypes/Repository";
+import { Repository } from "@sharedTypes/index";
 import { BranchBadge } from "./BranchBadge"
 import { BranchDropdown } from "./BranchDropdown"
 import { ForkDropdown } from "./ForkDropdown"

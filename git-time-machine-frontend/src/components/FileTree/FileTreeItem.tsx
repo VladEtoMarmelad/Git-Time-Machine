@@ -1,5 +1,5 @@
 import { FileTreeItem as FileTreeItemType } from "@/types/FileTreeItem";
-import { FileStatus } from "@sharedTypes/FileStatus";
+import { FileStatus } from "@sharedTypes/index";
 
 interface FileTreeItemProps {
   fileTreeItem: FileTreeItemType;

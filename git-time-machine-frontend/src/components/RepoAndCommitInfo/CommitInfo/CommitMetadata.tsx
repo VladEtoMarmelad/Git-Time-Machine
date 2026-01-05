@@ -1,4 +1,4 @@
-import { Commit } from "@sharedTypes/Commit";
+import { Commit } from "@sharedTypes/index";
 import Link from "next/link"
 
 interface CommitMetadataProps {

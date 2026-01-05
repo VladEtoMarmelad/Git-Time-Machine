@@ -4,20 +4,19 @@ import { useEffect, useState } from "react";
 import { FileTree } from "@/components/FileTree/FileTree";
 import { RangeSlider } from "@/components/RangeSlider";
 import { buildFileTree } from "@/utils/buildFileTree";
-import { File } from "@sharedTypes/File";
-import { Commit } from "@sharedTypes/Commit"
+import { File, Commit, Repository} from "@sharedTypes/index";
 import { useJobPolling } from "@/hooks/useJobPolling";
 import { gitApi } from "@/utils/gitApi";
 import { RepoUrlInput } from "@/components/RepoUrlInput";
 import { FileViewer } from "@/components/FileViewer/index";
 import { RepoAndCommitInfo } from "@/components/RepoAndCommitInfo/index";
-import { Repository } from "@sharedTypes/Repository";
 
 export default function Home() {
   const [selectedCommitIndex, setSelectedCommitIndex] = useState<number>(0);
   const [selectedBranch, setSelectedBranch] = useState<string>("");
   const [chosenFilePath, setChosenFilePath] = useState<string | null>(null);
   const [repoUrl, setRepoUrl] = useState<string>("");
+  const [fileTreeMode, setFileTreeMode] = useState<"full"|"changes">("full")
 
   // Job for commits
   const { 
@@ -26,7 +25,7 @@ export default function Home() {
     result: commits, 
     error: commitsError 
   } = useJobPolling<Commit[]>({
-    startJobFn: (params) => gitApi.startCommitsJob(params.url, params.branch),
+    startJobFn: (params) => gitApi.startCommitsJob(params.url, params.branch, params.fileTreeMode),
     pollJobFn: gitApi.pollCommitsJob
   });
 
@@ -93,6 +92,8 @@ export default function Home() {
           <RepoUrlInput 
             commitsStatus={commitsStatus}
             repoUrl={repoUrl}
+            fileTreeMode={fileTreeMode}
+            setFileTreeMode={setFileTreeMode}
             setRepoUrl={setRepoUrl}
             setChosenFilePath={setChosenFilePath}
             fetchCommits={fetchCommits}

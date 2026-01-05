@@ -1,14 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
+import { FileTreeMode } from '@sharedTypes/FileTreeMode';
 
 @Injectable()
 export class GitService {
 
   constructor(@InjectQueue("git-analysis") private readonly analysisQueue: Queue) {}
 
-  async getCommits(repoUrl: string, branch: string|null) {
-    const job = await this.analysisQueue.add("getCommits", {repoUrl, branch});
+  async getCommits(repoUrl: string, branch: string|null, fileTreeMode: FileTreeMode) {
+    const job = await this.analysisQueue.add("getCommits", {repoUrl, branch, fileTreeMode});
     return { jobId: job.id };
   }
 

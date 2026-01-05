@@ -1,4 +1,4 @@
-import { FileStatus } from "@sharedTypes/FileStatus";
+import { FileStatus } from "@sharedTypes/index";
 
 export interface FileTreeItem {
   name: string;

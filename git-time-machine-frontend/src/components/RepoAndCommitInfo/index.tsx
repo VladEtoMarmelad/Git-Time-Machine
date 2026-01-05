@@ -1,6 +1,5 @@
-import { Commit } from "@sharedTypes/Commit";
+import { Commit, Repository } from "@sharedTypes/index";
 import { CommitMetadata } from "./CommitInfo/CommitMetadata";
-import { Repository } from "@sharedTypes/Repository";
 import { RepoInfo } from "./RepoInfo";
 import { CopyableCommitHash } from "./CommitInfo/CopyableCommitHash";
 

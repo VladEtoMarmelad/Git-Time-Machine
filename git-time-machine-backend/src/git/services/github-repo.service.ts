@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { GithubClientService } from "./github-client.service";
-import { Repository } from "@sharedTypes/Repository";
+import { Repository } from "@sharedTypes/index";
 
 @Injectable()
 export class GithubRepoService {

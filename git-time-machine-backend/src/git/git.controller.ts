@@ -1,17 +1,18 @@
 import { Body, Controller, Get, HttpException, HttpStatus, Param, Post } from '@nestjs/common';
 import { GitService } from './git.service';
+import { FileTreeMode } from '@sharedTypes/FileTreeMode';
 
 @Controller("git")
 export class GitController {
   constructor(private readonly gitService: GitService) {}
   
   @Post("/getCommits")
-  async getCommits(@Body() body: {repoUrl: string; branch: string|null}) {
-    const { repoUrl, branch } = body;
+  async getCommits(@Body() body: {repoUrl: string; branch: string|null, fileTreeMode: FileTreeMode}) {
+    const { repoUrl, branch, fileTreeMode } = body;
     if (!repoUrl || !repoUrl.startsWith("https://github.com/")) {
       throw new HttpException("Invalid GitHub repository URL provided.", HttpStatus.BAD_REQUEST);
     }
-    return this.gitService.getCommits(repoUrl, branch);
+    return this.gitService.getCommits(repoUrl, branch, fileTreeMode);
   }
 
   @Get("/getCommits/:jobId")

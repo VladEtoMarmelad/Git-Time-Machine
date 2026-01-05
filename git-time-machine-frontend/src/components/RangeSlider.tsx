@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo } from 'react';
-import { Commit } from '@sharedTypes/Commit';
+import { Commit } from '@sharedTypes/index';
 import { formatDate } from '@/utils/formatDate';
 
 interface RangeSliderProps {

@@ -1,6 +1,5 @@
 import { FileTreeItem as FileTreeItemType} from "@/types/FileTreeItem";
-import { FileStatus } from "@sharedTypes/FileStatus";
-import { File } from "@sharedTypes/File";
+import { File, FileStatus } from "@sharedTypes/index";
 
 // Utility to transform a flat list of files into a tree structure
 export const buildFileTree = (files: File[]): FileTreeItemType[] => {

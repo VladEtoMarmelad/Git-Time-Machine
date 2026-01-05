@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Repository } from "@sharedTypes/Repository";
+import { Repository } from "@sharedTypes/index";
 import { CaretIcon, ForkIcon } from "@/components/icons";
 
 interface ForkDropdownProps {

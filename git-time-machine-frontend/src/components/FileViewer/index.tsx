@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { JobStatus } from "@/types/JobStatus"
-import { File } from "@sharedTypes/File";
+import { File } from "@sharedTypes/index";
 import { getLanguageFromFilename } from "@/utils/getLanguageFromFilename"; 
 import { MarkdownPreviewToggle } from './MarkdownPreviewToggle';
 import { MarkdownRenderer } from './MarkdownRenderer';
