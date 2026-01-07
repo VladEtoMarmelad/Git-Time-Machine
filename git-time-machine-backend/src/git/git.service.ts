@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
-import { FileTreeMode } from '@sharedTypes/FileTreeMode';
+import { FileTreeMode, Commit } from '@sharedTypes/index';
 
 @Injectable()
 export class GitService {
@@ -10,6 +10,11 @@ export class GitService {
 
   async getCommits(repoUrl: string, branch: string|null, fileTreeMode: FileTreeMode) {
     const job = await this.analysisQueue.add("getCommits", {repoUrl, branch, fileTreeMode});
+    return { jobId: job.id };
+  }
+
+  async getCommitWithFiles(commit: Commit, repoUrl: string, branch: string, fileTreeMode: FileTreeMode) {
+    const job = await this.analysisQueue.add("getCommitWithFiles", {commit, repoUrl, branch, fileTreeMode});
     return { jobId: job.id };
   }
 

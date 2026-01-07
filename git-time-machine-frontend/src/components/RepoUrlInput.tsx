@@ -1,5 +1,4 @@
 import { JobStatus } from "@/types/JobStatus"
-import { useEffect } from "react";
 import { CaretIcon } from "./icons";
 
 interface RepoUrlInputProps {
@@ -11,7 +10,7 @@ interface RepoUrlInputProps {
   setChosenFilePath: (filePath: string|null) => void;
   fetchCommits: (params: any) => Promise<void>;
   fetchRepositoryMetadata: (params: any) => Promise<void>;
-  fetchForks: (params: any) => Promise<void>
+  fetchForks: (params: any) => Promise<void>;
 }
 
 export const RepoUrlInput = ({
@@ -41,17 +40,6 @@ export const RepoUrlInput = ({
     })
   };
 
-  useEffect(() => {
-    if (repoUrl!=="") {
-      // Updating file tree
-      fetchCommits({
-        url: repoUrl,
-        branch: "",
-        fileTreeMode
-      })
-    }
-  }, [fileTreeMode])
-
   return (
     <section className="flex gap-4 mb-4">
       <input
@@ -70,7 +58,6 @@ export const RepoUrlInput = ({
         {commitsStatus === "processing" ? "Analyzing..." : "Execute"}
       </button>
 
-      {/* Добавленный выпадающий список */}
       <div className="relative flex items-center">
         <select
           value={fileTreeMode}

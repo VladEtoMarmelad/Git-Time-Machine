@@ -1,6 +1,6 @@
 import { Processor, Process } from "@nestjs/bull";
 import { Job } from "bull";
-import { File, FileTreeMode } from "@sharedTypes/index";
+import { Commit, File, FileTreeMode } from "@sharedTypes/index";
 import { GithubRepoService } from "./services/github-repo.service";
 import { GithubAnalysisService } from "./services/github-analysis.service";
 import * as path from "path";
@@ -25,6 +25,12 @@ export class GitProcessor {
   async getCommits(job: Job<{ repoUrl: string, branch: string | null, fileTreeMode: FileTreeMode}>) {
     const { repoUrl, branch, fileTreeMode } = job.data;
     return await this.githubAnalysisService.getCommits(repoUrl, branch ?? "main", fileTreeMode, job.id)
+  }
+
+  @Process("getCommitWithFiles")
+  async getCommitWithFiles(job: Job<{ commit: Commit, repoUrl: string, branch: string, fileTreeMode: FileTreeMode}>) {
+    const { commit, repoUrl, branch, fileTreeMode } = job.data;
+    return await this.githubAnalysisService.getCommitWithFiles(commit, repoUrl, branch ?? "main", fileTreeMode)
   }
 
   @Process("getFileContentFromCommit")

@@ -1,3 +1,4 @@
+import { Commit, FileTreeMode } from "@sharedTypes/index";
 import axios from "axios";
 
 const API_URL = "http://localhost:3030";
@@ -14,6 +15,17 @@ export const gitApi = {
       result: res.data.result?.commits, // Commit[]
       failedReason: res.data.failedReason 
     };
+  },
+  getCommitWithFiles: async (commit: Commit, repoUrl: string, selectedBranch: string, fileTreeMode: FileTreeMode): Promise<Commit> => {
+    const commitWithFiles = await axios.get(`${API_URL}/git/getCommitWithFiles`, {
+      params: {
+        commit: JSON.stringify(commit),
+        repoUrl,
+        branch: selectedBranch,
+        fileTreeMode
+      }
+    })
+    return commitWithFiles.data
   },
 
   startRepositoryMetadataJob: async (repoUrl: string) => {

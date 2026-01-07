@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Commit } from '@sharedTypes/index';
 import { formatDate } from '@/utils/formatDate';
 
@@ -10,38 +10,38 @@ interface RangeSliderProps {
   setSelectedCommitIndex: (commitIndex: number) => void
 }
 
-export const RangeSlider = ({commits, selectedCommitIndex, setSelectedCommitIndex}: RangeSliderProps) => {
-  const getDates = (commits: Commit[]): string[] => {
-    const dates: string[] = []
+export const RangeSlider = ({ commits, selectedCommitIndex, setSelectedCommitIndex }: RangeSliderProps) => {
+  // Local state for smooth slider movement
+  const [localIndex, setLocalIndex] = useState(selectedCommitIndex);
 
-    commits.forEach((commit: Commit) => {
-      dates.push(commit.date)
-    })
+  // Sync local state if prop changes externally (via buttons or input)
+  useEffect(() => {
+    setLocalIndex(selectedCommitIndex);
+  }, [selectedCommitIndex]);
 
-    return dates
-  }
-
-  const dates = useMemo(() => getDates(commits), [commits])
+  const dates = useMemo(() => commits.map(c => c.date), [commits]);
   const maxIndex = dates.length - 1;
 
-  // Calculating the fill percentage for a gradient
+  // Gradient calculation depends on the local index
   const getBackgroundSize = () => {
-    const percentage = maxIndex > 0 ? (selectedCommitIndex / maxIndex) * 100 : 0;
+    const percentage = maxIndex > 0 ? (localIndex / maxIndex) * 100 : 0;
     return { backgroundSize: `${percentage}% 100%` };
   };
 
+  // Handle manual input field changes (updates immediately)
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    // Allow empty input to let user clear it
-    if (value === "") {
-      return;
-    }
+    if (value === "") return;
 
     const num = parseInt(value, 10);
-    // Validation: check if it's a number and within the valid range (1 to length)
     if (!isNaN(num) && num >= 1 && num <= dates.length) {
-      setSelectedCommitIndex(num - 1); // Convert from 1-based to 0-based index
+      setSelectedCommitIndex(num - 1);
     }
+  };
+
+  // Commit value when the slider is released
+  const handleCommitChange = () => {
+    setSelectedCommitIndex(localIndex);
   };
 
   return (
@@ -56,19 +56,13 @@ export const RangeSlider = ({commits, selectedCommitIndex, setSelectedCommitInde
             </label>
             <div className="text-xs text-[#8b949e] flex items-center">
               
-              {/* --- Custom Number Input with Arrows --- */}
               <div className="flex items-center bg-[#010409] border border-[#30363d] rounded-md">
                 <input 
                   type="number"
-                  value={selectedCommitIndex + 1}
+                  value={localIndex + 1} // Display local value for responsiveness
                   onChange={handleInputChange}
-                  // Hide default browser arrows
-                  className={`
-                    w-12 text-center bg-transparent border-none outline-none
-                    [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none
-                  `}
+                  className="w-12 text-center bg-transparent border-none outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 />
-                {/* Custom arrows using SVG */}
                 <div className="flex flex-col text-gray-400">
                   <button 
                     onClick={() => setSelectedCommitIndex(Math.min(selectedCommitIndex + 1, maxIndex))} 
@@ -92,34 +86,32 @@ export const RangeSlider = ({commits, selectedCommitIndex, setSelectedCommitInde
               <span className="ml-2">/ {dates.length}</span>
             </div>
           </div>
-          {/* Displays the full date of the currently selected index */}
           <div className="text-xl font-semibold text-white">
-            {dates.length > 0 ? formatDate(dates[selectedCommitIndex], true) : "No commits found"}
+            {dates.length > 0 ? formatDate(dates[localIndex], true) : "No commits found"}
           </div>
         </div>
 
-        {/* Slider */}
+        {/* Slider Container */}
         <div className="relative w-full h-10 flex items-center">
           
-          {/* Background track with dots (Layer "below") */}
+          {/* Track and Dots */}
           <div className="absolute w-full h-2 bg-[#30363d] rounded-lg pointer-events-none flex items-center">
-             {dates.map((dateStr, index) => {
-                // Calculating the position of a point in percentage
-                const percentage = (index / maxIndex) * 100;
-                const isActive = selectedCommitIndex >= index;
-                const isCurrent = selectedCommitIndex === index;
+            {dates.map((dateStr, index) => {
+              const percentage = (index / maxIndex) * 100;
+              const isActive = localIndex >= index;
+              const isCurrent = localIndex === index;
 
-                return (
-                  <div
-                    key={`${index} ${dateStr}`}
-                    className={`absolute h-2 w-2 rounded-full transition-colors duration-200 -ml-1
-                      ${isActive ? 'bg-[#1f6feb]' : 'bg-[#484f58]'}
-                      ${isCurrent ? 'scale-150' : ''} 
-                    `}
-                    style={{ left: `${percentage}%` }}
-                  />
-                );
-             })}
+              return (
+                <div
+                  key={`${index}-${dateStr}`}
+                  className={`absolute h-2 w-2 rounded-full transition-colors duration-200 -ml-1
+                    ${isActive ? 'bg-[#1f6feb]' : 'bg-[#484f58]'}
+                    ${isCurrent ? 'scale-150' : ''} 
+                  `}
+                  style={{ left: `${percentage}%` }}
+                />
+              );
+            })}
           </div>
 
           <input
@@ -127,57 +119,39 @@ export const RangeSlider = ({commits, selectedCommitIndex, setSelectedCommitInde
             min={0}
             max={maxIndex}
             step={1}
-            value={selectedCommitIndex}
-            onChange={(e) => setSelectedCommitIndex(Number(e.target.value))}
+            value={localIndex}
+            // 1. Update only local state while dragging (visual feedback)
+            onChange={(e) => setLocalIndex(Number(e.target.value))}
+            // 2. Save final result to props upon release (mouse or touch)
+            onMouseUp={handleCommitChange}
+            onTouchEnd={handleCommitChange}
+            // For accessibility (keyboard arrows)
+            onKeyUp={handleCommitChange}
             style={getBackgroundSize()}
             className="
               absolute w-full z-20 h-2 appearance-none rounded-lg bg-transparent cursor-pointer
-              
-              /* Синяя полоса (Visual Fill) */
               bg-gradient-to-r from-[#1f6feb] to-[#1f6feb] bg-no-repeat
-              
               focus:outline-none focus:ring-2 focus:ring-[#1f6feb] focus:ring-offset-2 focus:ring-offset-[#0d1117]
-
-              /* Webkit Thumb */
-              [&::-webkit-slider-thumb]:appearance-none
-              [&::-webkit-slider-thumb]:h-5
-              [&::-webkit-slider-thumb]:w-5
-              [&::-webkit-slider-thumb]:rounded-full
-              [&::-webkit-slider-thumb]:bg-white
-              [&::-webkit-slider-thumb]:border-2
-              [&::-webkit-slider-thumb]:border-[#1f6feb]
-              [&::-webkit-slider-thumb]:shadow-[0_0_10px_rgba(31,111,235,0.5)]
-              [&::-webkit-slider-thumb]:transition-transform
-              [&::-webkit-slider-thumb]:duration-150
-              [&::-webkit-slider-thumb]:hover:scale-110
-
-              /* Firefox Thumb */
-              [&::-moz-range-thumb]:h-5
-              [&::-moz-range-thumb]:w-5
-              [&::-moz-range-thumb]:rounded-full
-              [&::-moz-range-thumb]:bg-white
-              [&::-moz-range-thumb]:border-none
+              [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-[#1f6feb] [&::-webkit-slider-thumb]:shadow-[0_0_10px_rgba(31,111,235,0.5)] [&::-webkit-slider-thumb]:transition-transform [&::-webkit-slider-thumb]:duration-150 [&::-webkit-slider-thumb]:hover:scale-110
+              [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:border-none
             "
           />
 
-          {/* Date Labels (Bottom Layer) */}
+          {/* Date Labels */}
           <div className="absolute top-8 w-full h-6 select-none">
             {dates.map((dateStr, index) => {
               const percentage = (index / maxIndex) * 100;
-                
               const isFirst = index === 0;
               const isLast = index === maxIndex;
-              const isSelected = index === selectedCommitIndex;
-
-              // Display logic: show the label only if it is selected or the last one
+              const isSelected = index === localIndex;
               const shouldShow = isFirst || isLast || isSelected;
 
               return (
                 <div
-                  key={`${index} ${dateStr}`}
+                  key={`label-${index}`}
                   onClick={() => setSelectedCommitIndex(index)}
                   className={`
-                    absolute text-xs transform -translate-x-1/2 cursor-pointer transition-colors duration-200
+                    absolute text-xs transform -translate-x-1/2 cursor-pointer transition-all duration-200
                     ${isSelected ? 'text-white font-bold top-[-5px]' : 'text-[#8b949e]'}
                     ${!shouldShow ? 'opacity-0 pointer-events-none' : 'opacity-100'}
                   `}
@@ -188,11 +162,10 @@ export const RangeSlider = ({commits, selectedCommitIndex, setSelectedCommitInde
               );
             })}
           </div>
-
         </div>
         
         <p className="text-xs text-[#8b949e]">
-          Drag the slider to select a restore point.
+          Drag to select, release to apply.
         </p>
       </div>
     </div>

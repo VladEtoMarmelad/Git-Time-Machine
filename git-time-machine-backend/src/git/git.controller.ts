@@ -1,10 +1,11 @@
-import { Body, Controller, Get, HttpException, HttpStatus, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, HttpException, HttpStatus, Param, Post, Query } from '@nestjs/common';
 import { GitService } from './git.service';
-import { FileTreeMode } from '@sharedTypes/FileTreeMode';
+import { GithubAnalysisService } from './services/github-analysis.service';
+import { FileTreeMode } from '@sharedTypes/index';
 
 @Controller("git")
 export class GitController {
-  constructor(private readonly gitService: GitService) {}
+  constructor(private readonly gitService: GitService, private readonly githubAnalysisService: GithubAnalysisService) {}
   
   @Post("/getCommits")
   async getCommits(@Body() body: {repoUrl: string; branch: string|null, fileTreeMode: FileTreeMode}) {
@@ -18,6 +19,15 @@ export class GitController {
   @Get("/getCommits/:jobId")
   async getAnalysisStatus(@Param("jobId") jobId: string) {
     return this.gitService.getJobStatus(jobId);
+  }
+
+  @Get("/getCommitWithFiles")
+  async getCommitWithFiles(@Query() body: {commit: string, repoUrl: string; branch: string|null, fileTreeMode: FileTreeMode}) {
+    const { commit, repoUrl, branch, fileTreeMode } = body;
+    if (!repoUrl || !repoUrl.startsWith("https://github.com/")) {
+      throw new HttpException("Invalid GitHub repository URL provided.", HttpStatus.BAD_REQUEST);
+    }
+    return await this.githubAnalysisService.getCommitWithFiles(JSON.parse(commit), repoUrl, branch ?? "main", fileTreeMode);
   }
 
   @Post("/file")

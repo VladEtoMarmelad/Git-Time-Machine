@@ -16,13 +16,15 @@ export default function Home() {
   const [selectedBranch, setSelectedBranch] = useState<string>("");
   const [chosenFilePath, setChosenFilePath] = useState<string | null>(null);
   const [repoUrl, setRepoUrl] = useState<string>("");
-  const [fileTreeMode, setFileTreeMode] = useState<"full"|"changes">("full")
+  const [fileTreeMode, setFileTreeMode] = useState<"full"|"changes">("full");
+  const [loadingFileTree, setLoadingFileTree] = useState<boolean>(false)
 
   // Job for commits
   const { 
     start: fetchCommits, 
     status: commitsStatus, 
     result: commits, 
+    updateResult: setCommits,
     error: commitsError 
   } = useJobPolling<Commit[]>({
     startJobFn: (params) => gitApi.startCommitsJob(params.url, params.branch, params.fileTreeMode),
@@ -73,6 +75,23 @@ export default function Home() {
     }
   }, [chosenFilePath, selectedCommitIndex, commits]); 
 
+  // Effect: Upload file tree when commit loaded or another commit selected or fileTreeMode is changed
+  useEffect(() => {
+    const getCommitWithFiles = async (): Promise<void> => {
+      if (commits && commitsStatus==="completed") {
+        setLoadingFileTree(true);
+        const commitWithFiles = await gitApi.getCommitWithFiles(commits[selectedCommitIndex], repoUrl, selectedBranch, fileTreeMode)
+
+        // Uploading files to one commit from whole list
+        const newCommits = [...commits]; 
+        newCommits[selectedCommitIndex] = commitWithFiles; 
+        setCommits(newCommits); 
+        setLoadingFileTree(false);
+      }
+    }
+    getCommitWithFiles()
+  }, [selectedCommitIndex, fileTreeMode, commitsStatus])
+
   return (
     <div className="flex min-h-screen font-sans bg-[#0b1117] text-[#c9d1d9]">
       <div className="flex w-full">
@@ -83,6 +102,7 @@ export default function Home() {
             <FileTree
               fileTreeItems={buildFileTree(commits[selectedCommitIndex].files)}
               choosedFile={chosenFilePath}
+              loadingFileTree={loadingFileTree}
               onSelect={(path) => setChosenFilePath(path)}
             />
           }
@@ -101,7 +121,7 @@ export default function Home() {
             fetchForks={fetchForks}
           />
 
-          {commits &&
+          {commits && repositoryMetadataStatus === "completed" && 
             <RepoAndCommitInfo 
               commit={commits[selectedCommitIndex]}
               repoUrl={repoUrl}

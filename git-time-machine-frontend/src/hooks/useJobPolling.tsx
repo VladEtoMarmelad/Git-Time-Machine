@@ -60,5 +60,12 @@ export const useJobPolling = <T, P = any>({ startJobFn, pollJobFn }: UseJobPolli
     };
   }, [jobId, status, pollJobFn]);
 
-  return {start, status, result, error, reset: () => setStatus("idle")};
+  return {
+    start, 
+    status, 
+    result, 
+    updateResult: setResult,
+    error, 
+    reset: () => setStatus("idle")
+  };
 };
