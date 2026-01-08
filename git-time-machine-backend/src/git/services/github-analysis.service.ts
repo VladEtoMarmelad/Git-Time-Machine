@@ -68,7 +68,7 @@ export class GithubAnalysisService implements OnModuleInit {
     }
   }
 
-  async getCommits(repoUrl: string, branch: string, fileTreeMode: FileTreeMode = "full", jobId: string): Promise<{ commits: Commit[] }> {
+  async getCommits(repoUrl: string, branch: string, fileTreeMode: FileTreeMode = "full"): Promise<{ commits: Commit[] }> {
     try {
       const { repoPath, commitHash } = await this.ensureRepo(repoUrl, branch);
 
@@ -85,7 +85,7 @@ export class GithubAnalysisService implements OnModuleInit {
 
       return { commits: commits.reverse() };
     } catch (error) {
-      this.logger.error(`Task ${jobId} failed: ${error.message}`);
+      this.logger.error(`Task failed: ${error.message}`);
       throw error;
     }
   }

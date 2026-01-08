@@ -64,7 +64,7 @@ export default function Home() {
     pollJobFn: gitApi.pollFileJob
   }); 
 
-  // Effect: Upload file when commit is changed or new file is selected
+  // Effect: Download file when commit is changed or new file is selected
   useEffect(() => {
     if (chosenFilePath && commits && commits[selectedCommitIndex]) {
       fetchFile({
@@ -75,21 +75,26 @@ export default function Home() {
     }
   }, [chosenFilePath, selectedCommitIndex, commits]); 
 
-  // Effect: Upload file tree when commit loaded or another commit selected or fileTreeMode is changed
+  // Effect: Download file tree when commit loaded or another commit selected or fileTreeMode is changed
   useEffect(() => {
-    const getCommitWithFiles = async (): Promise<void> => {
-      if (commits && commitsStatus==="completed") {
-        setLoadingFileTree(true);
-        const commitWithFiles = await gitApi.getCommitWithFiles(commits[selectedCommitIndex], repoUrl, selectedBranch, fileTreeMode)
+    if (commits && commitsStatus==="completed") {
+      const selectedCommit = commits[selectedCommitIndex];
+    
+      const getCommitWithFiles = async (): Promise<void> => {
+        // Not getting files for commit if they already downloaded
+        if (selectedCommit.files.length === 0) {
+          setLoadingFileTree(true);
+          const commitWithFiles = await gitApi.getCommitWithFiles(commits[selectedCommitIndex], repoUrl, selectedBranch, fileTreeMode)
 
-        // Uploading files to one commit from whole list
-        const newCommits = [...commits]; 
-        newCommits[selectedCommitIndex] = commitWithFiles; 
-        setCommits(newCommits); 
-        setLoadingFileTree(false);
+          // Downloading files to one commit from whole list
+          const newCommits = [...commits]; 
+          newCommits[selectedCommitIndex] = commitWithFiles; 
+          setCommits(newCommits); 
+          setLoadingFileTree(false);
+        }
       }
+      getCommitWithFiles()
     }
-    getCommitWithFiles()
   }, [selectedCommitIndex, fileTreeMode, commitsStatus])
 
   return (

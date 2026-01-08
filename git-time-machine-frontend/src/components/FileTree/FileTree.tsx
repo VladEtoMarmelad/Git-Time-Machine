@@ -26,7 +26,7 @@ export const FileTree = ({ fileTreeItems, choosedFile, loadingFileTree, onSelect
   const showSkeleton = loadingFileTree || fileTreeItems.length === 0;
 
   return (
-    <aside className="bg-[#0d1117] text-[#c9d1d9] w-80 h-screen overflow-auto border-r border-[#30363d] p-3">
+    <aside className="bg-[#0d1117] text-[#c9d1d9] w-80 h-screen overflow-auto border-r border-[#30363d] p-3" style={{ scrollbarColor: 'gray #0d1117', scrollbarWidth: 'thin' }}>
       <div className="text-xs font-semibold text-[#8b949e] mb-4 uppercase tracking-wider">Explorer</div>
       
       {showSkeleton ? (

@@ -24,7 +24,7 @@ export class GitProcessor {
   @Process("getCommits")
   async getCommits(job: Job<{ repoUrl: string, branch: string | null, fileTreeMode: FileTreeMode}>) {
     const { repoUrl, branch, fileTreeMode } = job.data;
-    return await this.githubAnalysisService.getCommits(repoUrl, branch ?? "main", fileTreeMode, job.id)
+    return await this.githubAnalysisService.getCommits(repoUrl, branch ?? "main", fileTreeMode)
   }
 
   @Process("getCommitWithFiles")
