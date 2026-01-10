@@ -43,6 +43,14 @@ export const FileViewer = ({ fileStatus, fileError, fileContent, chosenFilePath 
               setViewMode={setViewMode}
             />
 
+            <div className="flex items-center gap-4 px-4 py-2 border-b border-[#30363d] bg-[#0d1117] text-xs font-sans">
+              <div className="flex items-center gap-1">
+                <span className="ml-1 text-[#8b949e]">
+                  {fileContent.path}
+                </span>
+              </div>
+            </div>
+
             <div 
               className="h-full overflow-auto font-sans" // font-sans makes reading text easier
               style={{ scrollbarColor: 'gray #010409', scrollbarWidth: 'thin' }}
