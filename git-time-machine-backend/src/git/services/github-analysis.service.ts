@@ -135,6 +135,8 @@ export class GithubAnalysisService implements OnModuleInit {
         }));
       }
 
+      commit.fileTreeMode = fileTreeMode
+
       return commit;
     } catch (e) {
       this.logger.error(`Error processing ${commit.hash}: ${e.message}`);

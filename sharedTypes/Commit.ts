@@ -1,4 +1,4 @@
-import { File } from "./File" 
+import { File, FileTreeMode } from "./index" 
 
 export interface Commit {
   author: string;
@@ -6,4 +6,5 @@ export interface Commit {
   files: File[];
   hash: string;
   message: string;
+  fileTreeMode?: FileTreeMode;
 }

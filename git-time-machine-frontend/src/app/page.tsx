@@ -81,8 +81,8 @@ export default function Home() {
       const selectedCommit = commits[selectedCommitIndex];
     
       const getCommitWithFiles = async (): Promise<void> => {
-        // Not getting files for commit if they already downloaded
-        if (selectedCommit.files.length === 0) {
+        // Not getting files for commit if they already downloaded or fileTreeMode was not changed
+        if (selectedCommit.files.length === 0 || selectedCommit.fileTreeMode!==fileTreeMode) {
           setLoadingFileTree(true);
           const commitWithFiles = await gitApi.getCommitWithFiles(commits[selectedCommitIndex], repoUrl, selectedBranch, fileTreeMode)
 
