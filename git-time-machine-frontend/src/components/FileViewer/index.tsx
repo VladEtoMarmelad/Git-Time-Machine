@@ -5,15 +5,18 @@ import { getLanguageFromFilename } from "@/utils/getLanguageFromFilename";
 import { MarkdownPreviewToggle } from './MarkdownPreviewToggle';
 import { MarkdownRenderer } from './MarkdownRenderer';
 import { FileDiffViewer } from './FileDiffViewer';
+import { FileTreeItem } from '@/types/FileTreeItem';
 
 interface FileViewerProps {
   fileStatus: JobStatus;
   fileError: string | null;
+  fileTree: FileTreeItem[];
   fileContent: File | null;
-  chosenFilePath: string | null
+  chosenFilePath: string | null;
+  setChosenFilePath: (filePath: string|null) => void
 }
 
-export const FileViewer = ({ fileStatus, fileError, fileContent, chosenFilePath }: FileViewerProps) => {
+export const FileViewer = ({ fileStatus, fileError, fileTree, fileContent, chosenFilePath, setChosenFilePath }: FileViewerProps) => {
   const language = getLanguageFromFilename(chosenFilePath);
   const [viewMode, setViewMode] = useState<"diff"|"preview">("diff");
 
@@ -43,13 +46,14 @@ export const FileViewer = ({ fileStatus, fileError, fileContent, chosenFilePath 
               setViewMode={setViewMode}
             />
 
-            <div className="flex items-center gap-4 px-4 py-2 border-b border-[#30363d] bg-[#0d1117] text-xs font-sans">
+            {/* Selected file */}
+            <section className="flex items-center gap-4 px-4 py-2 border-b border-[#30363d] bg-[#0d1117] text-xs font-sans">
               <div className="flex items-center gap-1">
                 <span className="ml-1 text-[#8b949e]">
                   {fileContent.path}
                 </span>
               </div>
-            </div>
+            </section>
 
             <div 
               className="h-full overflow-auto font-sans" // font-sans makes reading text easier
@@ -62,7 +66,9 @@ export const FileViewer = ({ fileStatus, fileError, fileContent, chosenFilePath 
                 // --- CODE MODE (DIFF) ---
                 <FileDiffViewer 
                   language={language}
+                  fileTree={fileTree}
                   fileContent={fileContent}
+                  setChosenFilePath={setChosenFilePath}
                 />
               }
             </div>

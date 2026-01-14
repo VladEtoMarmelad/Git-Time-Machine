@@ -145,7 +145,9 @@ export default function Home() {
             fileStatus={fileStatus}
             fileError={fileError}
             fileContent={fileContent}
+            fileTree={commits ? buildFileTree(commits[selectedCommitIndex].files) : []}
             chosenFilePath={chosenFilePath}
+            setChosenFilePath={setChosenFilePath}
           />
 
           {commits &&
