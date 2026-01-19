@@ -1,20 +1,37 @@
-const POSSIBLE_EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx', '.json'];
+const POSSIBLE_EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx', '.json', '.py', '.java', '.go'];
 
-// Trying to find an existing file in the tree by iterating through extensions
 export const findActualPath = (resolvedPath: string, allPaths: Set<string>): string | null => {
-  // 1. Check for an exact match (if the extension already exists)
+  // 1. Direct match (e.g., for JS/TS relative paths)
   if (allPaths.has(resolvedPath)) return resolvedPath;
 
-  // 2. Checking extensions: file.ts, file.tsx...
+  // 2. Check with extensions
   for (const ext of POSSIBLE_EXTENSIONS) {
-    const pathWithExt = `${resolvedPath}${ext}`;
-    if (allPaths.has(pathWithExt)) return pathWithExt;
+    const withExt = `${resolvedPath}${ext}`;
+    if (allPaths.has(withExt)) return withExt;
   }
 
-  // 3. Checking index files: folder/index.ts, folder/index.tsx...
-  for (const ext of POSSIBLE_EXTENSIONS) {
-    const indexPath = `${resolvedPath}/index${ext}`;
-    if (allPaths.has(indexPath)) return indexPath;
+  // 3. Special logic for Java/Python (Absolute Package Imports)
+  // If the path doesn't start with ./ or ../, it is treated as a path from the source root.
+  // We look for a file in the tree that ends with this specific path.
+  if (!resolvedPath.startsWith('.')) {
+    const normalizedTarget = resolvedPath.startsWith('/') ? resolvedPath : `/${resolvedPath}`;
+    
+    for (const existingPath of allPaths) {
+      for (const ext of POSSIBLE_EXTENSIONS) {
+        if (existingPath.endsWith(`${normalizedTarget}${ext}`)) {
+          return existingPath;
+        }
+      }
+    }
+  }
+
+  // 4. Check for index files (e.g., index.ts, __init__.py)
+  const indexFiles = ['index', '__init__'];
+  for (const indexName of indexFiles) {
+    for (const ext of POSSIBLE_EXTENSIONS) {
+      const indexPath = `${resolvedPath}/${indexName}${ext}`;
+      if (allPaths.has(indexPath)) return indexPath;
+    }
   }
 
   return null;

@@ -6,12 +6,12 @@ export const resolveRelativePath = (currentPath: string, importPath: string): st
   }
 
   const parts = currentPath.split('/');
-  parts.pop(); // Delete the name of the current file
+  parts.pop(); // Remove the name of the current file
 
   const importParts = importPath.split('/');
 
   for (const part of importParts) {
-    if (part === '.') continue;
+    if (part === '.' || part === '') continue;
     if (part === '..') {
       parts.pop();
     } else {
