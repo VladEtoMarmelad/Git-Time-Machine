@@ -97,6 +97,12 @@ export default function Home() {
     }
   }, [selectedCommitIndex, fileTreeMode, commitsStatus])
 
+  // Effect: Setting selectedCommitIndex to 0, when another repo selected to avoid situations
+  // where the selected selectedCommitIndex of the previous repository is greater than the total number of commits of the new repository.
+  useEffect(() => {
+    setSelectedCommitIndex(0);
+  }, [commits])
+
   return (
     <div className="flex min-h-screen font-sans bg-[#0b1117] text-[#c9d1d9]">
       <div className="flex w-full">
@@ -145,7 +151,7 @@ export default function Home() {
             fileStatus={fileStatus}
             fileError={fileError}
             fileContent={fileContent}
-            fileTree={commits ? buildFileTree(commits[selectedCommitIndex].files) : []}
+            fileTree={(commits && commits[selectedCommitIndex].files) ? buildFileTree(commits[selectedCommitIndex].files) : []}
             chosenFilePath={chosenFilePath}
             setChosenFilePath={setChosenFilePath}
           />
