@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { FileTree } from "@/components/FileTree/FileTree";
 import { RangeSlider } from "@/components/RangeSlider";
 import { buildFileTree } from "@/utils/buildFileTree";
@@ -99,9 +99,18 @@ export default function Home() {
 
   // Effect: Setting selectedCommitIndex to 0, when another repo selected to avoid situations
   // where the selected selectedCommitIndex of the previous repository is greater than the total number of commits of the new repository.
+  const firstCommitHashRef = useRef<string | null>(null);
   useEffect(() => {
-    setSelectedCommitIndex(0);
-  }, [commits])
+    if (commits && commits.length > 0 && commitsStatus === "completed") {
+      const firstHash = commits[0].hash;
+
+      // If the hash of the first commit in the new array is different from what we saw before
+      if (firstCommitHashRef.current !== firstHash) {
+        setSelectedCommitIndex(0);
+        firstCommitHashRef.current = firstHash;
+      }
+    }
+  }, [commits, commitsStatus]);
 
   return (
     <div className="flex min-h-screen font-sans bg-[#0b1117] text-[#c9d1d9]">

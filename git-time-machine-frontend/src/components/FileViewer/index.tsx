@@ -25,7 +25,7 @@ export const FileViewer = ({ fileStatus, fileError, fileTree, fileContent, chose
   }, [chosenFilePath]);
 
   const isMarkdown = language === "markdown";
-  const showContent = fileStatus !== "processing" && fileStatus !== "failed" && fileContent?.content;
+  const showContent = fileStatus !== "processing" && fileStatus !== "failed" && fileContent?.content && fileContent?.displayHint === "normal";
 
   return (
     <section style={{ scrollbarColor: 'gray #010409', scrollbarWidth: 'thin' }}>
@@ -36,6 +36,7 @@ export const FileViewer = ({ fileStatus, fileError, fileTree, fileContent, chose
         {fileStatus === "processing" && <div className="p-4">Loading file content...</div>}
         {fileStatus === "failed" && <div className="p-4 text-red-500">{fileError}</div>}
         {fileStatus === "idle" && !chosenFilePath && <div className="p-4">Select a file to view its content.</div>}
+        {fileContent?.displayHint !== "normal" && <div className="p-4">Can't show file because it binary/collapsed</div>}
 
         {showContent && (
           <>

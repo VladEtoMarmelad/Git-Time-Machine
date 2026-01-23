@@ -4,6 +4,7 @@ import { exec } from "child_process";
 import { promisify } from "util";
 import { Mutex, MutexInterface } from "async-mutex";
 import { Commit, File, FileStatus, FileTreeMode } from "@sharedTypes/index";
+import { getFileMetadata } from "./getFileMetadata";
 import * as path from "path";
 import * as os from "os";
 import * as fs from "fs-extra";
@@ -90,11 +91,11 @@ export class GithubAnalysisService implements OnModuleInit {
     }
   }
 
-  async getCommitWithFiles(commit: Commit, repoUrl: string, branch: string, fileTreeMode: FileTreeMode) {
+  async getCommitWithFiles(commit: any, repoUrl: string, branch: string, fileTreeMode: FileTreeMode) {
     const { repoPath } = await this.ensureRepo(repoUrl, branch);
 
     try {
-      // 1. Get changes (diff) in any case to determine file statuses
+      // 1. Get changes (diff) to determine file statuses (A, M, D)
       const diffCmd = `git --git-dir="${repoPath}" diff-tree -r --no-commit-id --name-status --root ${commit.hash}`;
       const { stdout: diffOut } = await execAsync(diffCmd);
 
@@ -104,7 +105,6 @@ export class GithubAnalysisService implements OnModuleInit {
         if (firstTab === -1) return;
 
         const statusChar = line.substring(0, firstTab).trim();
-        // Handle quoted paths (Git escapes special characters)
         const filePath = line.substring(firstTab + 1).replace(/^"(.*)"$/, '$1').trim();
 
         let status: FileStatus = 'unchanged';
@@ -115,29 +115,38 @@ export class GithubAnalysisService implements OnModuleInit {
         statusMap.set(filePath, status);
       });
 
+      // Mapper function to create a file object
+      const mapToFileEntry = (filePath: string): File => {
+        const cleanPath = filePath.replace(/^"(.*)"$/, '$1');
+        const displayHint = getFileMetadata(cleanPath);
+        
+        return {
+          path: cleanPath,
+          status: statusMap.get(cleanPath) || 'unchanged',
+          displayHint
+        };
+      };
+
       if (fileTreeMode === "full") {
-        // MODE 1: Full file tree
+        // MODE 1: Full list of files in the commit
         const allFilesCmd = `git --git-dir="${repoPath}" ls-tree -r --name-only ${commit.hash}`;
         const { stdout: allFilesOut } = await execAsync(allFilesCmd, { maxBuffer: 1024 * 1024 * 20 });
 
-        commit.files = allFilesOut.split("\n").filter(Boolean).map(filePath => {
-          const cleanPath = filePath.replace(/^"(.*)"$/, '$1');
-          return {
-            path: cleanPath,
-            status: statusMap.get(cleanPath) || 'unchanged'
-          };
-        });
+        commit.files = allFilesOut
+          .split("\n")
+          .filter(Boolean)
+          .map(mapToFileEntry)
+          .filter(file => file.displayHint !== 'hidden'); // Filter out system junk/hidden files
       } else {
-        // MODE 2: Only changed files
-        commit.files = Array.from(statusMap.entries()).map(([path, status]) => ({
-          path,
-          status
-        }));
+        // MODE 2: Changed files only
+        commit.files = Array.from(statusMap.keys())
+          .map(mapToFileEntry)
+          .filter(file => file.displayHint !== 'hidden');
       }
 
-      commit.fileTreeMode = fileTreeMode
-
+      commit.fileTreeMode = fileTreeMode;
       return commit;
+
     } catch (e) {
       this.logger.error(`Error processing ${commit.hash}: ${e.message}`);
       return commit;
@@ -190,6 +199,7 @@ export class GithubAnalysisService implements OnModuleInit {
       return {
         hash: commitHash,
         path: filePath,
+        displayHint: getFileMetadata(filePath),
         status: "unchanged",
         content: currentContent,
         previousContent: previousContent,
@@ -199,6 +209,7 @@ export class GithubAnalysisService implements OnModuleInit {
       return {
         hash: commitHash,
         path: filePath,
+        displayHint: getFileMetadata(filePath),
         status: "unchanged",
         content: `Error: ${error.message}`,
         previousContent: `Error: ${error.message}`
