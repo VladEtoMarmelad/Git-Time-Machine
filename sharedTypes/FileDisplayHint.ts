@@ -1,0 +1,1 @@
+export type FileDisplayHint = 'normal' | 'collapsed' | 'binary' | 'hidden';

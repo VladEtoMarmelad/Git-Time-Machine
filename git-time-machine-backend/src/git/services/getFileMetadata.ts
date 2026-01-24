@@ -1,6 +1,6 @@
-type FileDisplayHint = 'normal' | 'collapsed' | 'binary' | 'hidden';
+import { FileDisplayHint } from "@sharedTypes/index";
 
-export const getFileMetadata = (filePath: string) => {
+export const getFileMetadata = (filePath: string): FileDisplayHint => {
   const filename = filePath.split('/').pop() || '';
   const extension = filename.split('.').pop()?.toLowerCase() || '';
 
@@ -23,16 +23,16 @@ export const getFileMetadata = (filePath: string) => {
 
   // 3. Hidden system files
   if (filename.startsWith('.DS_Store') || filename.startsWith('.git/')) {
-    return 'hidden' as FileDisplayHint;
+    return 'hidden';
   }
 
   if (collapsedFiles.includes(filename)) {
-    return 'collapsed' as FileDisplayHint;
+    return 'collapsed';
   }
 
   if (binaryExtensions.includes(extension)) {
-    return 'binary' as FileDisplayHint;
+    return 'binary';
   }
 
-  return 'normal' as FileDisplayHint;
+  return 'normal';
 }

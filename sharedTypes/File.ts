@@ -1,10 +1,10 @@
-import { FileStatus } from "./FileStatus";
+import { FileStatus, FileDisplayHint } from "./index";
 
 export interface File {
   hash?: string;
   path: string;
   status: FileStatus;
-  displayHint?: string
+  displayHint?: FileDisplayHint
   content?: string;
   previousContent?: string|null
 }
