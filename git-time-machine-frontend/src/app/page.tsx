@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { FileTree } from "@/components/FileTree/FileTree";
-import { RangeSlider } from "@/components/RangeSlider";
+import { CommitSelection } from "@/components/CommitSelection";
 import { buildFileTree } from "@/utils/buildFileTree";
 import { File, Commit, Repository} from "@sharedTypes/index";
 import { useJobPolling } from "@/hooks/useJobPolling";
@@ -166,7 +166,7 @@ export default function Home() {
           />
 
           {commits &&
-            <RangeSlider
+            <CommitSelection
               commits={commits}
               selectedCommitIndex={selectedCommitIndex}
               setSelectedCommitIndex={setSelectedCommitIndex}
