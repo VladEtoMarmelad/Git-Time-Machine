@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { Commit } from '@sharedTypes/index';
-import { CommitSearch } from './CommitSearch';
 import { RangeSlider } from './RangeSlider';
 import { CurrentCommitInfo } from './CurrentCommitInfo';
+import { SearchInput } from '../SearchInput';
+import { formatDate } from '@/utils/formatDate';
 
 interface CommitSelectionProps {
   commits: Commit[];
@@ -26,10 +27,21 @@ export const CommitSelection = ({ commits, selectedCommitIndex, setSelectedCommi
       <div className="w-full max-w-7xl space-y-4">
         
         {/* Commit Search Bar  */}
-        <CommitSearch 
-          commits={commits}
-          setSelectedCommitIndex={setSelectedCommitIndex}
-        />
+        <div className="mt-3 max-w-md">
+          <SearchInput
+            items={commits.map((c, i) => ({ ...c, originalIndex: i }))}
+            dropdownDirection="up" // Commits pop UP
+            placeholder="Search commits..."
+            onSelect={(item) => setSelectedCommitIndex(item.originalIndex)}
+            filterFn={(item, query) => item.message.toLowerCase().includes(query.toLowerCase())}
+            renderItem={(item) => (
+              <>
+                <div className="text-sm font-medium truncate">{item.message}</div>
+                <div className="text-[10px] opacity-70 group-hover:text-blue-100">{formatDate(item.date, true)}</div>
+              </>
+            )}
+          />
+        </div>
 
         {/* Some info about selected commit */}
         <CurrentCommitInfo 
