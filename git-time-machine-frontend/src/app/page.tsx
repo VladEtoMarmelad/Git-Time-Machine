@@ -77,7 +77,7 @@ export default function Home() {
 
   // Effect: Download file tree when commit loaded or another commit selected or fileTreeMode is changed
   useEffect(() => {
-    if (commits && commitsStatus==="completed") {
+    if (commits && commits[selectedCommitIndex] && commitsStatus==="completed") {
       const selectedCommit = commits[selectedCommitIndex];
     
       const getCommitWithFiles = async (): Promise<void> => {
@@ -160,12 +160,12 @@ export default function Home() {
             fileStatus={fileStatus}
             fileError={fileError}
             fileContent={fileContent}
-            fileTree={(commits && commits[selectedCommitIndex].files) ? buildFileTree(commits[selectedCommitIndex].files) : []}
+            fileTree={(commits && commits[selectedCommitIndex]?.files) ? buildFileTree(commits[selectedCommitIndex].files) : []}
             chosenFilePath={chosenFilePath}
             setChosenFilePath={setChosenFilePath}
           />
 
-          {commits &&
+          {commits && commits[selectedCommitIndex] && commits[selectedCommitIndex]?.files &&
             <CommitSelection
               commits={commits}
               selectedCommitIndex={selectedCommitIndex}
