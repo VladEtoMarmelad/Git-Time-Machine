@@ -114,8 +114,30 @@ export default function Home() {
 
   return (
     <div className="flex min-h-screen font-sans bg-[#0b1117] text-[#c9d1d9]">
+      {/* Custom scrollbar styling for the main window */}
+      <style jsx global>{`
+        ::-webkit-scrollbar {
+          width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+          background: #0b1117;
+        }
+        ::-webkit-scrollbar-thumb {
+          background: #30363d;
+          border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+          background: #484f58;
+        }
+        html {
+          scrollbar-width: thin;
+          scrollbar-color: #30363d #0b1117;
+        }
+      `}</style>
+
       <div className="flex w-full">
-        <div className="flex-shrink-0">
+        {/* Container for Sidebar to handle full height sticky positioning */}
+        <div className="flex-shrink-0 sticky top-0 h-screen">
           {commitsStatus === "processing" && <div className="p-4">Analyzing repository...</div>}
           {commitsStatus === "failed" && <div className="p-4 text-red-500">Error: {commitsError}</div>}
           {(commits && commits[selectedCommitIndex]?.files) &&

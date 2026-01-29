@@ -39,7 +39,8 @@ export const FileTree = ({ fileTreeItems, choosedFile, loadingFileTree, onSelect
   const showSkeleton = loadingFileTree || fileTreeItems.length === 0;
 
   return (
-    <aside className="bg-[#0d1117] text-[#c9d1d9] w-80 h-screen overflow-auto border-r border-[#30363d] p-3 flex flex-col" style={{ scrollbarWidth: 'thin' }}>
+    /* Sidebar container with full height and explicit border styling */
+    <aside className="bg-[#0d1117] text-[#c9d1d9] w-80 h-full overflow-auto border-r border-[#30363d] p-3 flex flex-col" style={{ scrollbarWidth: 'thin' }}>
       <div className="text-xs font-semibold text-[#8b949e] mb-4 uppercase tracking-wider">Explorer</div>
       
       {/* File Search - Pops DOWN */}
